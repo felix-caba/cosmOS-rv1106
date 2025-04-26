@@ -1,0 +1,53 @@
+# macOS basura
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Iconos de carpetas
+Icon?
+._*
+
+# Spotlight
+.Spotlight-V100
+.Trashes
+
+# Archivos de sistema
+ehthumbs.db
+Thumbs.db
+
+# Logs generales
+*.log
+
+# Archivos de backup
+*~
+
+# Caches de compilación
+build/
+out/
+output/
+
+# Archivos de Make
+*.o
+*.ko
+*.mod
+*.mod.c
+*.cmd
+.tmp_versions/
+Module.symvers
+modules.order
+
+# Configuraciones locales
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+
+# Archivos de entorno (opcional)
+.env
+*.env
+
+# Docker (por si acaso)
+*.pid
+docker-compose.override.yml
+
