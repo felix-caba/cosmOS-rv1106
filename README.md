@@ -1,6 +1,6 @@
 # cosmOS
 
-![cosmOS Logo Placeholder](https://cosmit.es/C.svg)
+<img src="https://cosmit.es/C.svg" alt="cosmOS Logo" height="130"/>
 
 ---
 
