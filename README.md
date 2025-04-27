@@ -27,11 +27,11 @@ La forma recomendada de compilar cosmOS es usando un contenedor Docker para aseg
 2.  **Lanza el contenedor Docker:**
     Este comando iniciará un contenedor Ubuntu interactivo, montará el directorio `docker-shared` y te dejará en una sesión `bash` dentro del contenedor.
     ```bash
-    docker run -it --name cosmOS_development -v $(pwd)/docker-shared:/mnt ubuntu bash
+    docker run -it --rm -v "$(pwd)":/docker-shared/mnt/cosmOS_rv1106 -w /mnt/ -u 501:20 ubuntu bash
     ```
     * `$(pwd)/docker-shared`: La ruta absoluta a tu directorio `docker-shared` en el host.
     * `/mnt`: El punto de montaje dentro del contenedor.
-
+    *  `docker exec -it -u 0 cosmOS_development bash`: Para ejecutar como root. Sin -U para user normal.
 ### 📦 Instalación de Paquetes Necesarios
 
 Una vez dentro del contenedor Docker (o en tu entorno de compilación nativo si prefieres, aunque no recomendado inicialmente), necesitas instalar las dependencias de software requeridas por Buildroot y las herramientas de compilación.
