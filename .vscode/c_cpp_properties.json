@@ -3,8 +3,7 @@
         {
             "name": "Mac",
             "includePath": [
-                "${default}",
-                "${workspaceFolder}/kernel/include"
+                "${default}"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",
