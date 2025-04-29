@@ -57,6 +57,24 @@ UBOOT_CFG = luckfox_rv1106_uboot_defconfig
 
 #UBOOT############################################################
 
+#KERNEL############################################################
+KERNEL_CFG := rv1106_defconfig
+KERNEL_CFG_FRAGMENT :=
+
+KERNEL_DTS := rv1106g-luckfox-pico-pro.dts
+KERNEL_DIR := $(SYSDRV_DIR)/source/kernel
+
+KERNEL_DIR_DRV_KO ?= $(SYSDRV_KERNEL_OBJS_OUTPUT_DIR)/drv_ko
+KERNEL_DTB :=
+ifeq ($(ARCH),arm)
+KERNEL_DTB := $(SYSDRV_KERNEL_OBJS_OUTPUT_DIR)/arch/$(ARCH)/boot/dts/$(KERNEL_DTS:dts=dtb)
+endif
+ifeq ($(ARCH),arm64)
+KERNEL_DTB := $(SYSDRV_KERNEL_OBJS_OUTPUT_DIR)/arch/$(ARCH)/boot/dts/rockchip/$(KERNEL_DTS:dts=dtb)
+endif
+#KERNEL############################################################
+
+
 # OUTS
 export OUT_BOARD:=board_$(SYSDRV_LIB_TYPE)_$(CHIP)
 export OUT_IMAGE:=image_$(SYSDRV_LIB_TYPE)_$(CHIP)
