@@ -72,6 +72,16 @@ endif
 ifeq ($(ARCH),arm64)
 KERNEL_DTB := $(SYSDRV_KERNEL_OBJS_OUTPUT_DIR)/arch/$(ARCH)/boot/dts/rockchip/$(KERNEL_DTS:dts=dtb)
 endif
+
+OUTPUT_SYSDRV_RAMDISK_DIR=$(ROOT_DIR)/output/out/ramdisk
+
+ifneq ($(OUTPUT_SYSDRV_RAMDISK_DIR),)
+SYSDRV_RAMDISK_DIR := $(OUTPUT_SYSDRV_RAMDISK_DIR)
+else
+SYSDRV_KERNEL_INSTALL_BOOTIMG := y
+SYSDRV_KERNEL_UPDATE_DTB := y
+endif
+
 #KERNEL############################################################
 
 
@@ -165,20 +175,14 @@ kernel_savedefconfig:
 kernel: prepare
 	@echo -e "$(C_GREEN) ==sysdrv== build kernel  $(C_NORMAL)"
 	$(MAKE) -C $(KERNEL_DIR) ARCH=$(ARCH) mrproper
-ifeq ($(SYSDRV_DRIVER_MODULE), y)
-	$(call MACRO_CHK_DRIVER_MODULE, $(SYSDRV_DIR)/drv_ko/rockit/, rockit-ko)
-	$(call MACRO_CHK_DRIVER_MODULE, $(SYSDRV_DIR)/drv_ko/kmpp/, kmpp)
-endif
+
 	$(AT)test ! -f $(KERNEL_DIR)/vmlinux || make -C $(KERNEL_DIR) distclean
 	@rm -rf $(KERNEL_DTB)
 	$(MAKE) O=$(SYSDRV_KERNEL_OBJS_OUTPUT_DIR) -C $(KERNEL_DIR) ARCH=$(ARCH) \
 		CROSS_COMPILE=$(CROSS_COMPILE) $(KERNEL_CFG) $(KERNEL_CFG_FRAGMENT) || exit 1
 	$(MAKE) O=$(SYSDRV_KERNEL_OBJS_OUTPUT_DIR) -C $(KERNEL_DIR) ARCH=$(ARCH) \
 		CROSS_COMPILE=$(CROSS_COMPILE) $(KERNEL_DTS:dts=img) BOOT_ITS=$(KERNEL_DIR)/boot.its -j$(SYSDRV_JOBS) || exit 1
-ifeq ($(SYSDRV_DRIVER_MODULE), y)
-	$(call MACRO_CLEAN_DRIVER_MODULE, rockit-ko)
-	$(call MACRO_CLEAN_DRIVER_MODULE, kmpp)
-endif
+
 ifeq ($(SYSDRV_KERNEL_INSTALL_BOOTIMG),y)
 	cp -fv $(SYSDRV_KERNEL_OBJS_OUTPUT_DIR)/boot.img $(SYSDRV_DIR_OUT_IMAGE)/boot.img
 	$(call MAROC_COPY_PKG_TO_SYSDRV_OUTPUT, $(OUTPUT_IMAGE_PATH), $(SYSDRV_DIR_OUT_IMAGE)/boot.img)
