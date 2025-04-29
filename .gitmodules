@@ -5,3 +5,8 @@
 [submodule "sysdrv/source/uboot/rkbin"]
 	path = sysdrv/source/uboot/rkbin
 	url = https://github.com/rockchip-linux/rkbin
+[submodule "sysdrv/source/kernel"]
+	path = sysdrv/source/kernel
+	url = https://github.com/rockchip-linux/kernel
+	branch = develop-6.1
+	ignore = all
