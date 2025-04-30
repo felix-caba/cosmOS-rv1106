@@ -53,7 +53,7 @@ IDBLOCK_IMG := idblock.img
 IDBLOCK_SRC_BIN := *_idblock_v*.img
 UBOOT_COMPILE_MAKE := $(UBOOT_DIR)/make.sh
 
-UBOOT_CFG = luckfox_rv1106_uboot_defconfig
+UBOOT_CFG = rv1106_defconfig
 
 #UBOOT############################################################
 
