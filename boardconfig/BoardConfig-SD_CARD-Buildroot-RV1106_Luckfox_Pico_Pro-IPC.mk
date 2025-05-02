@@ -51,8 +51,8 @@ export RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ext4,userdata@/userdata@ext4,oem@/
 # config filesystem compress (Just for squashfs or ubifs)
 # squashfs: lz4/lzo/lzma/xz/gzip, default xz
 # ubifs:    lzo/zlib, default lzo
-# export RK_SQUASHFS_COMP=xz
-# export RK_UBIFS_COMP=lzo
+export RK_SQUASHFS_COMP=xz
+export RK_UBIFS_COMP=lzo
 
 #################################################
 #	TARGET_ROOTFS

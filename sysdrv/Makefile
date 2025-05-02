@@ -7,6 +7,62 @@ BUILDROOT_VER ?= buildroot-2023.02.6
 HCITOOL_TOOL_PATH :=$(SYSDRV_DIR)/tools/board/buildroot/hcitool_patch
 MPV_PATCH_PATH :=$(SYSDRV_DIR)/tools/board/buildroot/mpv_patch
 
+# ROOFTS CONFIGURATION # # ROOFTS CONFIGURATION # # ROOFTS CONFIGURATION # # ROOFTS CONFIGURATION #
+RK_PROJECT_ROOTFS_TYPE := ext4
+SYSDRV_ROOTFS_FS_TYPE := ext4
+
+RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ext4,userdata@/userdata@ext4,oem@/oem@ext4
+
+CONFIG_SYSDRV_PARTITION="32K(env),512K@32K(idblock),256K(uboot),32M(boot),512M(oem),256M(userdata),6G(rootfs)"
+
+BOOT_MEDIUM=sd_card
+
+CONFIG_SYSDRV_PARTITION ?=
+ROOTFS_PART_SIZE ?= $(shell $(SYSDRV_DIR)/tools/pc/toolkits/get_part_info.sh \
+					PART_SIZE "$(CONFIG_SYSDRV_PARTITION)" rootfs)
+ROOTFS_PART_NUM ?= $(shell $(SYSDRV_DIR)/tools/pc/toolkits/get_part_info.sh \
+				   PART_NUM "$(CONFIG_SYSDRV_PARTITION)" rootfs $(BOOT_MEDIUM))
+ENV_PART_SIZE ?= $(shell $(SYSDRV_DIR)/tools/pc/toolkits/get_part_info.sh \
+				 PART_SIZE "$(CONFIG_SYSDRV_PARTITION)" env)
+ENV_PART_OFFSET ?= $(shell $(SYSDRV_DIR)/tools/pc/toolkits/get_part_info.sh \
+				   PART_OFFSET "$(CONFIG_SYSDRV_PARTITION)" env)
+
+ifneq ($(findstring ext4 ext2 jffs2 squashfs ubifs erofs,$(RK_PROJECT_ROOTFS_TYPE)),)
+ifneq ($(findstring FAIL,$(ROOTFS_PART_SIZE)),)
+$(error ## ROOTFS_PART_SIZE is invalid)
+endif
+endif
+ifneq ($(findstring FAIL,$(ENV_PART_SIZE)),)
+$(warning ## ENV_PART_SIZE is invalid)
+endif
+ifneq ($(findstring FAIL,$(ENV_PART_OFFSET)),)
+$(warning ## ENV_PART_OFFSET is invalid)
+endif
+
+ifeq ($(BOOT_MEDIUM), sd_card)
+SYSDRV_ROOTFS_BUILD_TARGET := rootfs_ext4
+ifeq ($(SYSDRV_ROOTFS_FS_TYPE),)
+SYSDRV_ROOTFS_FS_TYPE := ext4
+endif
+
+KERNEL_CMDLINE_FRAGMENT += rootfstype=$(SYSDRV_ROOTFS_FS_TYPE) \
+						   root=/dev/mmcblk1p$(ROOTFS_PART_NUM)
+endif
+
+ifeq ($(SYSDRV_ROOTFS_FS_TYPE),squashfs)
+SYSDRV_ROOTFS_BUILD_TARGET := rootfs_squashfs
+ifneq ($(findstring $(BOOT_MEDIUM),spi_nand slc_nand),)
+SYSDRV_ROOTFS_BUILD_TARGET := rootfs_ubi
+endif
+endif
+
+ifeq ($(SYSDRV_ROOTFS_FS_TYPE),initramfs)
+SYSDRV_ROOTFS_BUILD_TARGET := rootfs_initramfs
+endif
+
+# ROOFTS CONFIGURATION # # ROOFTS CONFIGURATION # # ROOFTS CONFIGURATION # # ROOFTS CONFIGURATION #
+
+
 # Compiler # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 ARCH = arm
 CONFIG_SYSDRV_CROSS := arm-rockchip830-linux-uclibcgnueabihf
@@ -99,9 +155,9 @@ TOOLCHAIN_RUNTIME_LIB:=runtime_lib
 TOOLCHAIN_RUNTIME_LIB_C:=lib.tar.bz2
 
 # OUTS
-export OUT_BOARD:=board_$(SYSDRV_LIB_TYPE)_$(CHIP)
-export OUT_IMAGE:=image_$(SYSDRV_LIB_TYPE)_$(CHIP)
-export OUT_ROOTFS:=rootfs_$(SYSDRV_LIB_TYPE)_$(CHIP)
+OUT_BOARD:=board_$(SYSDRV_LIB_TYPE)_$(CHIP)
+OUT_IMAGE:=image_$(SYSDRV_LIB_TYPE)_$(CHIP)
+OUT_ROOTFS:=rootfs_$(SYSDRV_LIB_TYPE)_$(CHIP)
 
 SYSDRV_DIR_OUT_IMAGE := $(SYSDRV_DIR)/out/$(OUT_IMAGE)
 SYSDRV_DIR_OUT_BOARD := $(SYSDRV_DIR)/out/bin/$(OUT_BOARD)
@@ -298,6 +354,18 @@ buildroot_clean:
 	$(AT)rm -rf $(BUILDROOT_DIR)/$(BUILDROOT_VER)
 
 ##########################################################################################
+#	build pc tools
+##########################################################################################
+include $(SYSDRV_DIR)/tools/pc/Makefile.tools.pc.mk
+pctools: prepare tools_pc-builds
+	@echo -e "$(C_GREEN) ==sysdrv== build tools which run on pc  $(C_NORMAL)"
+	-chmod a+x $(SYSDRV_DIR_OUT_PC)/*
+	$(call MAROC_COPY_PKG_TO_SYSDRV_OUTPUT, $(OUTPUT_ROOTFS_TOOLS_DIR), $(SYSDRV_DIR_OUT_PC), SELF)
+
+pctools_clean:
+	@echo -e "$(C_GREEN) ==sysdrv== clean tools which run on pc  $(C_NORMAL)"
+
+##########################################################################################
 #	build board tools
 ##########################################################################################
 include $(SYSDRV_DIR)/tools/board/Makefile.tools.board.mk
@@ -334,6 +402,9 @@ drv_clean:
 ##########################################################################################
 #	build rootfs
 ##########################################################################################
+
+ROOTFS_BUILD_ENV := rootfs_prepare pctools buildroot boardtools drv
+
 rootfs: $(ROOTFS_BUILD_ENV)
 	@echo -e "$(C_GREEN) ==sysdrv== build rootfs  $(C_NORMAL)"
 	#@if [ "$(TARGET_ROOTFS)" = "custom" ]; then \
@@ -360,38 +431,9 @@ ifeq ($(SYSDRV_BUILD_VERSION),RELEASE)
 	$(call MAROC_STRIP_DEBUG_SYMBOL, $(SYSDRV_DIR_OUT_ROOTFS))
 endif
 
-rootfs_ubi:
-	@echo -e "$(C_GREEN) ==sysdrv== build ubi rootfs  $(C_NORMAL)"
-	# build rootfs as follow:
-	# the pagesize = 2k, blocksize = 128k, part_size = 32M
-	# the pagesize = 2k, blocksize = 256k, part_size = 32M
-	# the pagesize = 4k, blocksize = 256k, part_size = 32M
-	# command format:
-	# $(UBI_TOOL) <source dir> <output dir> <partition size> <partition name> <fs type> <fs comp>"
-	$(SYSDRV_DIR_OUT_PC)/$(UBI_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_DIR_OUT_IMAGE) $(ROOTFS_PART_SIZE) rootfs $(SYSDRV_ROOTFS_FS_TYPE) $(SYSDRV_ROOTFS_FS_COMP)
-
-rootfs_jffs2:
-	@echo -e "$(C_GREEN) ==sysdrv== build jffs2 rootfs  $(C_NORMAL)"
-	# use for spi nor
-	$(SYSDRV_DIR_OUT_PC)/$(JFFS2_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_ROOTFS_OUT_IMAGE) $(ROOTFS_PART_SIZE)
-
-rootfs_squashfs:
-	@echo -e "$(C_GREEN) ==sysdrv== build squashfs rootfs  $(C_NORMAL)"
-	# SYSDRV_ROOTFS_FS_COMP support lz4|lzo|lzma|xz|gzip (default gzip)
-	$(SYSDRV_DIR_OUT_PC)/$(SQUASHFS_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_ROOTFS_OUT_IMAGE) $(SYSDRV_ROOTFS_FS_COMP)
-
-rootfs_erofs:
-	@echo -e "$(C_GREEN) ==sysdrv== build erofs rootfs  $(C_NORMAL)"
-	# SYSDRV_ROOTFS_FS_COMP support lz4|lz4hc (default lz4hc)
-	$(SYSDRV_DIR_OUT_PC)/$(EROFS_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_ROOTFS_OUT_IMAGE) $(SYSDRV_ROOTFS_FS_COMP)
-
 rootfs_ext4:
 	@echo -e "$(C_GREEN) ==sysdrv== build ext4 rootfs  $(C_NORMAL)"
 	$(SYSDRV_DIR_OUT_PC)/$(EXT4_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_ROOTFS_OUT_IMAGE) $(ROOTFS_PART_SIZE)
-
-rootfs_initramfs:
-	@echo -e "$(C_GREEN) ==sysdrv== build initramfs rootfs  $(C_NORMAL)"
-	$(SYSDRV_DIR_OUT_PC)/$(INITRAMFS_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_ROOTFS_OUT_IMAGE)
 
 rootfs_clean:
 	$(AT)rm $(SYSDRV_DIR_OUT_ROOTFS)/ -rf
@@ -399,3 +441,25 @@ rootfs_clean:
 		rm -rf $(BUILDROOT_DIR)/$(BUILDROOT_VER)/output/target ;\
 		find $(BUILDROOT_DIR)/$(BUILDROOT_VER) -name ".stamp_target_installed" -exec rm {} \; ;\
 	);
+
+##########################################################################################
+#	build env.img
+##########################################################################################
+env: prepare
+	@$(MAKE) -C $(SYSDRV_DIR)/tools/pc/uboot_tools
+
+ifeq ($(BOOT_MEDIUM),sd_card)
+	@echo "blkdevparts=mmcblk1:$(CONFIG_SYSDRV_PARTITION)" > $(SYSDRV_UBOOT_ENV_CFG_FILE)
+	@test "$(ROOTFS_PART_NUM)" = "FAIL" || \
+		echo "sys_bootargs=root=/dev/mmcblk1p$(ROOTFS_PART_NUM)" >> $(SYSDRV_UBOOT_ENV_CFG_FILE)
+endif
+
+ifeq ($(findstring FAIL,$(ENV_PART_SIZE)),)
+	$(SYSDRV_DIR_OUT_PC)/mkenvimage -s $(ENV_PART_SIZE) -p 0x0 -o $(SYSDRV_DIR_OUT_IMAGE)/env.img $(SYSDRV_UBOOT_ENV_CFG_FILE)
+endif
+
+##########################################################################################
+#	clean out
+##########################################################################################
+out_clean:
+	@rm $(SYSDRV_DIR)/out -rf
