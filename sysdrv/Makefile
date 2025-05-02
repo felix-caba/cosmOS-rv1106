@@ -24,6 +24,17 @@ AT?=@
 SYSDRV_LIB_TYPE := uclibc
 # LIBC
 
+OUTPUT_ROOTFS_SOURCE_DIR := $(SDK_ROOT_DIR)/output/out/sysdrv_out
+OUTPUT_ROOTFS_TOOLS_DIR := $(SDK_ROOT_DIR)/output/out/sysdrv_out
+
+
+SYSDRV_BUILD_RECOVERY := y
+ifeq ($(SYSDRV_BUILD_RECOVERY),y)
+export SYSDRV_KERNEL_OBJS_OUTPUT_DIR := $(SYSDRV_DIR)/source/objs_kernel_recovery
+export SYSDRV_KERNEL_UPDATE_DTB := n
+endif
+export SYSDRV_KERNEL_OBJS_OUTPUT_DIR ?= $(SYSDRV_DIR)/source/objs_kernel
+
 ############################################################
 define MAROC_COPY_PKG_TO_SYSDRV_OUTPUT
 @dir_out=$(shell echo $(1)); \
@@ -84,6 +95,8 @@ endif
 
 #KERNEL############################################################
 
+TOOLCHAIN_RUNTIME_LIB:=runtime_lib
+TOOLCHAIN_RUNTIME_LIB_C:=lib.tar.bz2
 
 # OUTS
 export OUT_BOARD:=board_$(SYSDRV_LIB_TYPE)_$(CHIP)
@@ -203,6 +216,31 @@ kernel_clean:
 	@-rm -rf $(SYSDRV_DIR)/source/objs_*
 	@-rm -rf $(SYSDRV_KERNEL_MOD_PATH) $(KERNEL_DIR_DRV_KO)
 
+
+
+##########################################################################################
+#	prepare rootfs
+##########################################################################################
+rootfs_prepare: prepare
+	@echo -e "$(C_GREEN) ==sysdrv== prepare rootfs   $(C_NORMAL)"
+	rm -rf $(SYSDRV_DIR_OUT_ROOTFS)
+	mkdir -p $(SYSDRV_DIR_OUT_ROOTFS)
+	tar xf $(SYSDRV_DIR)/tools/board/rootfs_script.tar -C $(SYSDRV_DIR_OUT_ROOTFS)
+	tar xjf $(TOOLCHAIN_DIR)/$(TOOLCHAIN_RUNTIME_LIB)/$(TOOLCHAIN_RUNTIME_LIB_C) -C $(SYSDRV_DIR_OUT_ROOTFS)
+	pushd $(SYSDRV_DIR_OUT_ROOTFS)/lib/ ; mv -fv \
+		libasan_preinit.o \
+		libasan.so* \
+		libtsan.so* \
+		libubsan.so* \
+		libSegFault.so \
+		libmemusage.so* \
+		libpcprofile.so* \
+		libthread_db*.so* \
+		libBrokenLocale* \
+		libinproctrace.so \
+		$(SYSDRV_DIR_OUT_BOARD); \
+	popd
+
 ##########################################################################################
 #   Build buildroot for CosmOS Kernel
 #   Author : Felix
@@ -257,8 +295,17 @@ else
 endif
 
 buildroot_clean:
-	$(AT)rm -rf $(BUILDROOT_DIR)/$(BUILDROOT_VER) 
+	$(AT)rm -rf $(BUILDROOT_DIR)/$(BUILDROOT_VER)
 
+##########################################################################################
+#	build board tools
+##########################################################################################
+include $(SYSDRV_DIR)/tools/board/Makefile.tools.board.mk
+boardtools: tools_board-builds
+	@echo -e "$(C_GREEN) ==sysdrv== build tools which run on board   $(C_NORMAL)"
+
+boardtools_clean: tools_board-clean
+	@echo -e "$(C_GREEN) ==sysdrv== build $@ done$(C_NORMAL)"
 
 ##########################################################################################
 #	build driver ko
@@ -283,3 +330,72 @@ drv_clean:
 	@test ! -d drv_ko || $(MAKE) -C $(SYSDRV_DIR)/drv_ko clean
 	@-rm -rf $(SYSDRV_KERNEL_MOD_PATH) $(KERNEL_DIR_DRV_KO)
 	@echo -e "$(C_GREEN) ==sysdrv== clean drv $(C_NORMAL)"
+
+##########################################################################################
+#	build rootfs
+##########################################################################################
+rootfs: $(ROOTFS_BUILD_ENV)
+	@echo -e "$(C_GREEN) ==sysdrv== build rootfs  $(C_NORMAL)"
+	#@if [ "$(TARGET_ROOTFS)" = "custom" ]; then \
+	#	test -d $(SYSDRV_DIR)/tools/board/custom_rootfs || ( \
+	#		cp -r $(SYSDRV_DIR)/tools/board/custom_rootfs/ $(SYSDRV_DIR)/out/$(OUT_ROOTFS) ; \
+	#	); \
+	#else \
+	#	make -C $(SYSDRV_DIR) strip \
+	#fi
+
+	pushd $(SYSDRV_DIR)/out;tar cf $(OUT_ROOTFS).tar $(OUT_ROOTFS);popd
+	@# RK_PARTITION_FS_TYPE_CFG is defined outside of sysdrv,
+	@# so if defined RK_PARTITION_FS_TYPE_CFG, we ignore SYSDRV_ROOTFS_BUILD_TARGET
+	@test "$(ROOTFS_PART_SIZE)" = "FAIL" || \
+		test "$(RK_PARTITION_FS_TYPE_CFG)x" != "x" || \
+		make -C $(SYSDRV_DIR) $(SYSDRV_ROOTFS_BUILD_TARGET)
+	$(call MAROC_COPY_PKG_TO_SYSDRV_OUTPUT, $(OUTPUT_ROOTFS_SOURCE_DIR), $(SYSDRV_DIR)/out/$(OUT_ROOTFS).tar )
+	$(call MAROC_COPY_PKG_TO_SYSDRV_OUTPUT, $(OUTPUT_ROOTFS_TOOLS_DIR), $(SYSDRV_DIR)/out/bin )
+	@echo -e "$(C_GREEN) ==sysdrv== finish sysdrv build  $(C_NORMAL)"
+
+strip:
+ifeq ($(SYSDRV_BUILD_VERSION),RELEASE)
+	@echo -e "$(C_GREEN) ==sysdrv== strip files of rootfs  $(C_NORMAL)"
+	$(call MAROC_STRIP_DEBUG_SYMBOL, $(SYSDRV_DIR_OUT_ROOTFS))
+endif
+
+rootfs_ubi:
+	@echo -e "$(C_GREEN) ==sysdrv== build ubi rootfs  $(C_NORMAL)"
+	# build rootfs as follow:
+	# the pagesize = 2k, blocksize = 128k, part_size = 32M
+	# the pagesize = 2k, blocksize = 256k, part_size = 32M
+	# the pagesize = 4k, blocksize = 256k, part_size = 32M
+	# command format:
+	# $(UBI_TOOL) <source dir> <output dir> <partition size> <partition name> <fs type> <fs comp>"
+	$(SYSDRV_DIR_OUT_PC)/$(UBI_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_DIR_OUT_IMAGE) $(ROOTFS_PART_SIZE) rootfs $(SYSDRV_ROOTFS_FS_TYPE) $(SYSDRV_ROOTFS_FS_COMP)
+
+rootfs_jffs2:
+	@echo -e "$(C_GREEN) ==sysdrv== build jffs2 rootfs  $(C_NORMAL)"
+	# use for spi nor
+	$(SYSDRV_DIR_OUT_PC)/$(JFFS2_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_ROOTFS_OUT_IMAGE) $(ROOTFS_PART_SIZE)
+
+rootfs_squashfs:
+	@echo -e "$(C_GREEN) ==sysdrv== build squashfs rootfs  $(C_NORMAL)"
+	# SYSDRV_ROOTFS_FS_COMP support lz4|lzo|lzma|xz|gzip (default gzip)
+	$(SYSDRV_DIR_OUT_PC)/$(SQUASHFS_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_ROOTFS_OUT_IMAGE) $(SYSDRV_ROOTFS_FS_COMP)
+
+rootfs_erofs:
+	@echo -e "$(C_GREEN) ==sysdrv== build erofs rootfs  $(C_NORMAL)"
+	# SYSDRV_ROOTFS_FS_COMP support lz4|lz4hc (default lz4hc)
+	$(SYSDRV_DIR_OUT_PC)/$(EROFS_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_ROOTFS_OUT_IMAGE) $(SYSDRV_ROOTFS_FS_COMP)
+
+rootfs_ext4:
+	@echo -e "$(C_GREEN) ==sysdrv== build ext4 rootfs  $(C_NORMAL)"
+	$(SYSDRV_DIR_OUT_PC)/$(EXT4_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_ROOTFS_OUT_IMAGE) $(ROOTFS_PART_SIZE)
+
+rootfs_initramfs:
+	@echo -e "$(C_GREEN) ==sysdrv== build initramfs rootfs  $(C_NORMAL)"
+	$(SYSDRV_DIR_OUT_PC)/$(INITRAMFS_TOOL) $(SYSDRV_DIR_OUT_ROOTFS) $(SYSDRV_ROOTFS_OUT_IMAGE)
+
+rootfs_clean:
+	$(AT)rm $(SYSDRV_DIR_OUT_ROOTFS)/ -rf
+	test ! -d $(BUILDROOT_DIR)/$(BUILDROOT_VER)/output/target  || (\
+		rm -rf $(BUILDROOT_DIR)/$(BUILDROOT_VER)/output/target ;\
+		find $(BUILDROOT_DIR)/$(BUILDROOT_VER) -name ".stamp_target_installed" -exec rm {} \; ;\
+	);
