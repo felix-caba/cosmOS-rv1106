@@ -77,18 +77,37 @@ endif
 
 # ROOFTS CONFIGURATION # # ROOFTS CONFIGURATION # # ROOFTS CONFIGURATION # # ROOFTS CONFIGURATION #
 
+EXT4_TOOL:=mkfs_ext4.sh
+UBI_TOOL:=mkfs_ubi.sh
+SQUASHFS_TOOL:=mkfs_squashfs.sh
+JFFS2_TOOL:=mkfs_jffs2.sh
+EROFS_TOOL:=mkfs_erofs.sh
+INITRAMFS_TOOL:=mkfs_initramfs.sh
+
 # Compiler # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-ARCH = arm
+
 CONFIG_SYSDRV_CROSS := arm-rockchip830-linux-uclibcgnueabihf
 CROSS_COMPILE := $(CONFIG_SYSDRV_CROSS)-
 
+ifeq ($(CONFIG_SYSDRV_CROSS),arm-rockchip830-linux-uclibcgnueabihf)
+SYSDRV_LIB_TYPE := uclibc
+ARCH := arm
+SYSDRV_CROSS_CFLAGS += -march=armv7-a -mfpu=neon -mfloat-abi=hard
+endif
+
 TOOLCHAIN_FILE := $(shell which $(CONFIG_SYSDRV_CROSS)-gcc )
 TOOLCHAIN_DIR := $(shell dirname $(shell dirname $(TOOLCHAIN_FILE)))
-export BR2_TOOLCHAIN_EXTERNAL_PATH := $(shell which $(CONFIG_SYSDRV_CROSS)-gcc)
+
+export ARCH
+export SYSDRV_CROSS
+export SYSDRV_CROSS_CFLAGS
+export SYSDRV_ARCH_TYPE=$(ARCH)
+export CROSS_COMPILE=$(SYSDRV_CROSS)-
+export KERNEL_DIR
 
 # Compiler # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
-
+BUILDROOT_CFG ?= config_normal
 BUILDROOT_DEFCONFIG := $(SYSDRV_DIR)/tools/board/buildroot/luckfox_pico_defconfig
 
 export LC_ALL=C
@@ -96,9 +115,6 @@ SHELL:=/bin/bash
 MAKE=make
 AT?=@
 
-# LIBC
-SYSDRV_LIB_TYPE := uclibc
-# LIBC
 
 OUTPUT_ROOTFS_SOURCE_DIR := $(SDK_ROOT_DIR)/output/out/sysdrv_out
 OUTPUT_ROOTFS_TOOLS_DIR := $(SDK_ROOT_DIR)/output/out/sysdrv_out
@@ -364,6 +380,16 @@ rootfs_prepare: prepare
 #   Author : Felix
 #	Date: 2025
 ##########################################################################################
+
+buildroot_menuconfig:
+	@echo -e "$(C_GREEN) ==sysdrv== buildroot memnuconfig   $(C_NORMAL)"
+	$(MAKE) $(BUILDROOT_DEFCONFIG) -C $(BUILDROOT_DIR)/$(BUILDROOT_VER)
+	$(MAKE) menuconfig -C $(BUILDROOT_DIR)/$(BUILDROOT_VER)
+#	$(MAKE) source -C $(BUILDROOT_DIR)/$(BUILDROOT_VER)
+
+buildroot_savedefconfig:
+	@echo -e "$(C_GREEN) ==sysdrv== buildroot savedefconfig   $(C_NORMAL)"
+	$(MAKE) savedefconfig -C $(BUILDROOT_DIR)/$(BUILDROOT_VER) 
 
 buildroot_create:
 	@echo -e "$(C_GREEN) ==sysdrv== buildroot create   $(C_NORMAL)"
