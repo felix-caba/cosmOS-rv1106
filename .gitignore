@@ -51,3 +51,6 @@ modules.order
 *.pid
 docker-compose.override.yml
 
+sysdrv/board_uclibc_
+objs_kernel/
+sysdrv/source/buildroot/

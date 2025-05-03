@@ -1,8 +1,21 @@
+C_BLACK  = \e[30;1m
+C_RED    = \e[31;1m
+C_GREEN  = \e[32;1m
+C_YELLOW = \e[33;1m
+C_BLUE   = \e[34;1m
+C_PURPLE = \e[35;1m
+C_CYAN   = \e[36;1m
+C_WHITE  = \e[37;1m
+C_NORMAL = \033[0m
+
+ROOTFS_BUILD_ENV := rootfs_prepare pctools buildroot boardtools drv
+
 SYSDRV_DIR=$(shell pwd)
 
 ROOT_DIR := $(SYSDRV_DIR)/..
 
-BUILDROOT_DIR=/buildroot
+
+BUILDROOT_DIR := $(SYSDRV_DIR)/source/buildroot
 BUILDROOT_VER ?= buildroot-2023.02.6
 HCITOOL_TOOL_PATH :=$(SYSDRV_DIR)/tools/board/buildroot/hcitool_patch
 MPV_PATCH_PATH :=$(SYSDRV_DIR)/tools/board/buildroot/mpv_patch
@@ -11,9 +24,11 @@ MPV_PATCH_PATH :=$(SYSDRV_DIR)/tools/board/buildroot/mpv_patch
 RK_PROJECT_ROOTFS_TYPE := ext4
 SYSDRV_ROOTFS_FS_TYPE := ext4
 
+SYSDRV_JOBS = 4
+
 RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ext4,userdata@/userdata@ext4,oem@/oem@ext4
 
-CONFIG_SYSDRV_PARTITION="32K(env),512K@32K(idblock),256K(uboot),32M(boot),512M(oem),256M(userdata),6G(rootfs)"
+CONFIG_SYSDRV_PARTITION=32K(env),512K@32K(idblock),256K(uboot),32M(boot),512M(oem),256M(userdata),6G(rootfs)
 
 BOOT_MEDIUM=sd_card
 
@@ -62,12 +77,17 @@ endif
 
 # ROOFTS CONFIGURATION # # ROOFTS CONFIGURATION # # ROOFTS CONFIGURATION # # ROOFTS CONFIGURATION #
 
-
 # Compiler # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 ARCH = arm
 CONFIG_SYSDRV_CROSS := arm-rockchip830-linux-uclibcgnueabihf
 CROSS_COMPILE := $(CONFIG_SYSDRV_CROSS)-
+
+TOOLCHAIN_FILE := $(shell which $(CONFIG_SYSDRV_CROSS)-gcc )
+TOOLCHAIN_DIR := $(shell dirname $(shell dirname $(TOOLCHAIN_FILE)))
+export BR2_TOOLCHAIN_EXTERNAL_PATH := $(shell which $(CONFIG_SYSDRV_CROSS)-gcc)
+
 # Compiler # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
 
 BUILDROOT_DEFCONFIG := $(SYSDRV_DIR)/tools/board/buildroot/luckfox_pico_defconfig
 
@@ -84,7 +104,7 @@ OUTPUT_ROOTFS_SOURCE_DIR := $(SDK_ROOT_DIR)/output/out/sysdrv_out
 OUTPUT_ROOTFS_TOOLS_DIR := $(SDK_ROOT_DIR)/output/out/sysdrv_out
 
 
-SYSDRV_BUILD_RECOVERY := y
+SYSDRV_BUILD_RECOVERY := n
 ifeq ($(SYSDRV_BUILD_RECOVERY),y)
 export SYSDRV_KERNEL_OBJS_OUTPUT_DIR := $(SYSDRV_DIR)/source/objs_kernel_recovery
 export SYSDRV_KERNEL_UPDATE_DTB := n
@@ -106,6 +126,30 @@ if [ -n "$$dir_out" ] ;then \
 	done; \
 fi
 endef
+
+define MACRO_CHK_DRIVER_MODULE
+@(pkg_src=$(strip $(1)); \
+pkg_dst=$(strip $(2)); \
+pkg_release=$(strip release_$${pkg_dst}_$(CHIP)_$(ARCH)_asm); \
+if [ -d "$$pkg_src/$$pkg_dst" ];then echo "TEST: $$pkg_src/$$pkg_dst" && \
+	(rm -f $$KERNEL_DIR/drivers/$$pkg_dst && \
+	ln -sf $$pkg_src/$$pkg_dst $$KERNEL_DIR/drivers/$$pkg_dst ); \
+	else echo "TEST: $$pkg_src/$$pkg_release" && \
+	(rm -f $$KERNEL_DIR/drivers/$$pkg_dst && \
+	ln -sf $$pkg_src/$$pkg_release $$KERNEL_DIR/drivers/$$pkg_dst ); \
+fi; \
+grep -w "$$pkg_dst" $$KERNEL_DIR/drivers/Makefile || \
+	(echo "obj-\$$(CONFIG_ROCKCHIP_THUNDER_BOOT)	+= $$pkg_dst/" >> $$KERNEL_DIR/drivers/Makefile ); \
+);
+endef
+
+define MACRO_CLEAN_DRIVER_MODULE
+@(pkg_dst=$(strip $(1)); \
+pkg_cmds="sed -i '/\<obj-\$$(CONFIG_ROCKCHIP_THUNDER_BOOT)	+= $(strip $(1))\//d' $$KERNEL_DIR/drivers/Makefile"; \
+grep -w "$$pkg_dst" $$KERNEL_DIR/drivers/Makefile && \
+eval "$$pkg_cmds";\
+);
+endef
 ############################################################
 
 #UBOOT############################################################
@@ -121,13 +165,15 @@ IDBLOCK_SRC_BIN := *_idblock_v*.img
 UBOOT_COMPILE_MAKE := $(UBOOT_DIR)/make.sh
 
 UBOOT_CFG = rv1106_defconfig
+UBOOT_CFG_FRAGMENT = rk-emmc.config
+
+CHIP := rv1106
 
 #UBOOT############################################################
 
 #KERNEL############################################################
 KERNEL_CFG := rv1106_defconfig
-KERNEL_CFG_FRAGMENT :=
-
+KERNEL_CFG_FRAGMENT := rv1106-evb.config
 KERNEL_DTS := rv1106g-luckfox-pico-pro.dts
 KERNEL_DIR := $(SYSDRV_DIR)/source/kernel
 
@@ -165,6 +211,7 @@ SYSDRV_DIR_OUT_PC := $(SYSDRV_DIR)/out/bin/pc
 SYSDRV_DIR_OUT_ROOTFS:=$(SYSDRV_DIR)/out/$(OUT_ROOTFS)
 # OUTS
 
+
 SYSDRV_KERNEL_MOD_PATH:=$(SYSDRV_DIR)/out/kernel_drv_ko
 SYSDRV_ROOTFS_OUT_IMAGE := $(SYSDRV_DIR_OUT_IMAGE)/rootfs_base.img
 SYSDRV_UBOOT_ENV_CFG_FILE :=$(SYSDRV_DIR_OUT_IMAGE)/.env.txt
@@ -176,6 +223,14 @@ ifeq ($(ARCH),arm)
 KERNEL_DTB := $(SYSDRV_KERNEL_OBJS_OUTPUT_DIR)/arch/$(ARCH)/boot/dts/$(KERNEL_DTS:dts=dtb)
 endif
 
+
+
+################################################################################
+export SYSDRV_DIR_OUT_PC
+export SYSDRV_DIR_OUT_IMAGE
+export SYSDRV_DIR_OUT_BOARD
+export SYSDRV_DIR_OUT_ROOTFS
+################################################################################
 
 ################################################################################
 ##    set task
@@ -242,6 +297,22 @@ kernel_savedefconfig:
 	cp  $(KERNEL_DIR)/defconfig $(KERNEL_DIR)/arch/arm/configs/$(KERNEL_CFG)
 
 kernel: prepare
+	@echo -e "$(C_GREEN) ==sysdrv== copy dts files  $(C_NORMAL)"
+	@# Comprobar y copiar archivos DTS/DTSI si no existen en el árbol del kernel
+	@DTS_TARGET_DIR=$(KERNEL_DIR)/arch/$(ARCH)/boot/dts; \
+	DTS_SOURCE_DIR=$(ROOT_DIR)/dts; \
+	DTS_FILE1=$(KERNEL_DTS); \
+	DTS_FILE2=rv1106-luckfox-pico-pro-max-ipc.dtsi; \
+	mkdir -p "$$DTS_TARGET_DIR"; \
+	if [ ! -f "$$DTS_TARGET_DIR/$$DTS_FILE1" ]; then \
+		echo "Copiando $$DTS_FILE1 a la fuente del kernel..."; \
+		cp -v "$$DTS_SOURCE_DIR/$$DTS_FILE1" "$$DTS_TARGET_DIR/"; \
+	fi; \
+	if [ ! -f "$$DTS_TARGET_DIR/$$DTS_FILE2" ]; then \
+		echo "Copiando $$DTS_FILE2 a la fuente del kernel..."; \
+		cp -v "$$DTS_SOURCE_DIR/$$DTS_FILE2" "$$DTS_TARGET_DIR/"; \
+	fi
+
 	@echo -e "$(C_GREEN) ==sysdrv== build kernel  $(C_NORMAL)"
 	$(MAKE) -C $(KERNEL_DIR) ARCH=$(ARCH) mrproper
 
@@ -252,10 +323,6 @@ kernel: prepare
 	$(MAKE) O=$(SYSDRV_KERNEL_OBJS_OUTPUT_DIR) -C $(KERNEL_DIR) ARCH=$(ARCH) \
 		CROSS_COMPILE=$(CROSS_COMPILE) $(KERNEL_DTS:dts=img) BOOT_ITS=$(KERNEL_DIR)/boot.its -j$(SYSDRV_JOBS) || exit 1
 
-ifeq ($(SYSDRV_KERNEL_INSTALL_BOOTIMG),y)
-	cp -fv $(SYSDRV_KERNEL_OBJS_OUTPUT_DIR)/boot.img $(SYSDRV_DIR_OUT_IMAGE)/boot.img
-	$(call MAROC_COPY_PKG_TO_SYSDRV_OUTPUT, $(OUTPUT_IMAGE_PATH), $(SYSDRV_DIR_OUT_IMAGE)/boot.img)
-endif
 	# Start install kernel drivers
 	$(call MAROC_COPY_PKG_TO_SYSDRV_OUTPUT, $(SYSDRV_RAMDISK_DIR), \
 		$(SYSDRV_KERNEL_OBJS_OUTPUT_DIR)/arch/$(ARCH)/boot/Image* \
@@ -272,30 +339,25 @@ kernel_clean:
 	@-rm -rf $(SYSDRV_DIR)/source/objs_*
 	@-rm -rf $(SYSDRV_KERNEL_MOD_PATH) $(KERNEL_DIR_DRV_KO)
 
-
-
 ##########################################################################################
 #	prepare rootfs
 ##########################################################################################
 rootfs_prepare: prepare
+
 	@echo -e "$(C_GREEN) ==sysdrv== prepare rootfs   $(C_NORMAL)"
 	rm -rf $(SYSDRV_DIR_OUT_ROOTFS)
 	mkdir -p $(SYSDRV_DIR_OUT_ROOTFS)
 	tar xf $(SYSDRV_DIR)/tools/board/rootfs_script.tar -C $(SYSDRV_DIR_OUT_ROOTFS)
 	tar xjf $(TOOLCHAIN_DIR)/$(TOOLCHAIN_RUNTIME_LIB)/$(TOOLCHAIN_RUNTIME_LIB_C) -C $(SYSDRV_DIR_OUT_ROOTFS)
-	pushd $(SYSDRV_DIR_OUT_ROOTFS)/lib/ ; mv -fv \
-		libasan_preinit.o \
-		libasan.so* \
-		libtsan.so* \
-		libubsan.so* \
-		libSegFault.so \
-		libmemusage.so* \
-		libpcprofile.so* \
-		libthread_db*.so* \
-		libBrokenLocale* \
-		libinproctrace.so \
-		$(SYSDRV_DIR_OUT_BOARD); \
-	popd
+	# Move all files extracted from the toolchain library tarball's lib directory
+		@if [ -d "$(SYSDRV_DIR_OUT_ROOTFS)/lib" ]; then \
+		echo "Moving files from $(SYSDRV_DIR_OUT_ROOTFS)/lib to $(SYSDRV_DIR_OUT_BOARD)"; \
+		mv -fv $(SYSDRV_DIR_OUT_ROOTFS)/lib/* $(SYSDRV_DIR_OUT_BOARD)/ || true; \
+		rmdir $(SYSDRV_DIR_OUT_ROOTFS)/lib || true; \
+	else \
+		echo "Warning: Directory $(SYSDRV_DIR_OUT_ROOTFS)/lib not found after extraction."; \
+	fi
+
 
 ##########################################################################################
 #   Build buildroot for CosmOS Kernel
@@ -330,8 +392,12 @@ buildroot: prepare
 		cp ${MPV_PATCH_PATH}/0002-change-j1.patch $(BUILDROOT_DIR)/$(BUILDROOT_VER)/package/mpv/ ;\
 	);
 
-	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) $(BUILDROOT_DEFCONFIG) -C $(BUILDROOT_DIR)/$(BUILDROOT_VER) 
-	$(SYSDRV_DIR)/tools/board/mirror_select/buildroot_mirror_select.sh $(BUILDROOT_DIR)/$(BUILDROOT_VER)/.config
+	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) $(notdir $(BUILDROOT_DEFCONFIG)) -C $(BUILDROOT_DIR)/$(BUILDROOT_VER) 
+
+	(chmod +x $(SYSDRV_DIR)/tools/board/mirror_select/buildroot_mirror_select.sh; \
+	$(SYSDRV_DIR)/tools/board/mirror_select/buildroot_mirror_select.sh $(BUILDROOT_DIR)/$(BUILDROOT_VER)/.config; \
+	)
+
 	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) source -C $(BUILDROOT_DIR)/$(BUILDROOT_VER) 
 	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -j$(SYSDRV_JOBS) -C $(BUILDROOT_DIR)/$(BUILDROOT_VER) 
 

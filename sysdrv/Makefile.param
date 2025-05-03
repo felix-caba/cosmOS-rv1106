@@ -48,12 +48,6 @@ PATH:=$(CURRENT_DIR)/tools/pc/toolkits:$(PATH)
 ################################################################################
 ##   Public Configuraton
 ################################################################################
-ifeq ($(SYSDRV_JOBS),)
-SYSDRV_JOBS:=$(shell echo `getconf _NPROCESSORS_ONLN`)
-endif
-ifeq ($(SYSDRV_JOBS),0)
-SYSDRV_JOBS:=6
-endif
 
 SYSDRV_OPTS := -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 KERNEL_DIR := $(CURRENT_DIR)/source/kernel
