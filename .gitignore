@@ -54,3 +54,4 @@ docker-compose.override.yml
 sysdrv/board_uclibc_
 objs_kernel/
 sysdrv/source/buildroot/
+sysdrv/tools/board/dosfstools/dosfstools-4.2

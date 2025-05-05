@@ -32,6 +32,7 @@ CONFIG_SYSDRV_PARTITION=32K(env),512K@32K(idblock),256K(uboot),32M(boot),512M(oe
 BOOT_MEDIUM=sd_card
 
 CONFIG_SYSDRV_PARTITION ?=
+
 ROOTFS_PART_SIZE ?= $(shell $(SYSDRV_DIR)/tools/pc/toolkits/get_part_info.sh \
 					PART_SIZE "$(CONFIG_SYSDRV_PARTITION)" rootfs)
 ROOTFS_PART_NUM ?= $(shell $(SYSDRV_DIR)/tools/pc/toolkits/get_part_info.sh \
@@ -98,6 +99,7 @@ TOOLCHAIN_FILE := arm-rockchip830-linux-uclibcgnueabihf-gcc
 TOOLCHAIN_DIR := $(shell dirname $(shell dirname $(TOOLCHAIN_FILE)))
 CHIP := rv1106
 
+export CHIP
 export ARCH
 export CONFIG_SYSDRV_CROSS
 export SYSDRV_CROSS_CFLAGS

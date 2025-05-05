@@ -112,6 +112,25 @@ buildroot_rootfs_prereq_files=(
     "sysdrv/source/buildroot/buildroot-2023.02.6/output/images/rootfs.tar"
 )
 
+
+dosfstools_rootfs_usr_dirs=(
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/bin"
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/sbin"
+)
+dosfstools_rootfs_usr_files=(
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/bin/io"
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/sbin/fatlabel"
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/sbin/fsck.fat"
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/sbin/mkfs.fat"
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/sbin/dosfsck"     # -> fsck.fat
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/sbin/dosfslabel"  # -> fatlabel
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/sbin/fsck.msdos"  # -> fsck.fat
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/sbin/fsck.vfat"   # -> fsck.fat
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/sbin/mkdosfs"     # -> mkfs.fat
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/sbin/mkfs.msdos"  # -> mkfs.fat
+    "sysdrv/out/rootfs_uclibc_rv1106/usr/sbin/mkfs.vfat"   # -> mkfs.fat
+)
+
 # --- Check Functions (Wrappers) ---
 
 check_kernel_files() {
@@ -131,16 +150,21 @@ check_buildroot_rootfs_files() {
     fi
     echo ""
     check_items "Buildroot Rootfs Structure Check" empty_array buildroot_rootfs_dirs buildroot_rootfs_links
-    return $? 
+    return $?
+}
+
+check_dosfstools_rootfs_files() {
+    check_items "Dosftools Rootfs Files Check" dosfstools_rootfs_usr_files dosfstools_rootfs_usr_dirs dosfstools_rootfs_usr_links
 }
 
 # --- Main Execution Logic ---
 
 echo -e "${BLUE}Starting Build Process Checks...${NC}"
 
-check_buildroot_rootfs_files
+
+check_dosfstools_rootfs_files
 if [[ $? -ne 0 ]]; then
-    echo -e "${RED}✘ Error: Missing rootfs files/directories. Aborting build.${NC}"
+    echo -e "${RED}✘ Error: Missing dosfstools files/directories. Aborting build.${NC}"
     exit 1
 fi
 
