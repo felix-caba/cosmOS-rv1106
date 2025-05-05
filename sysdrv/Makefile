@@ -96,7 +96,10 @@ SYSDRV_CROSS_CFLAGS += -march=armv7-a -mfpu=neon -mfloat-abi=hard
 endif
 
 TOOLCHAIN_FILE := arm-rockchip830-linux-uclibcgnueabihf-gcc
-TOOLCHAIN_DIR := $(shell dirname $(shell dirname $(TOOLCHAIN_FILE)))
+
+_TOOLCHAIN_COMPILER_PATH := $(shell which $(TOOLCHAIN_FILE))
+TOOLCHAIN_DIR := $(shell dirname $(shell dirname $(_TOOLCHAIN_COMPILER_PATH)))
+
 CHIP := rv1106
 
 export CHIP
@@ -117,8 +120,8 @@ SHELL:=/bin/bash
 MAKE=make
 AT?=@
 
-OUTPUT_ROOTFS_SOURCE_DIR := $(SDK_ROOT_DIR)/output/out/sysdrv_out
-OUTPUT_ROOTFS_TOOLS_DIR := $(SDK_ROOT_DIR)/output/out/sysdrv_out
+OUTPUT_ROOTFS_SOURCE_DIR := $(ROOT_DIR)/output/out/sysdrv_out
+OUTPUT_ROOTFS_TOOLS_DIR := $(ROOT_DIR)/output/out/sysdrv_out
 
 SYSDRV_BUILD_RECOVERY := n
 ifeq ($(SYSDRV_BUILD_RECOVERY),y)
@@ -337,6 +340,7 @@ kernel_clean:
 ##########################################################################################
 #	prepare rootfs
 ##########################################################################################
+
 rootfs_prepare: prepare
 
 	@echo -e "$(C_GREEN) ==sysdrv== prepare rootfs   $(C_NORMAL)"
@@ -344,16 +348,24 @@ rootfs_prepare: prepare
 	mkdir -p $(SYSDRV_DIR_OUT_ROOTFS)
 	tar xf $(SYSDRV_DIR)/tools/board/rootfs_script.tar -C $(SYSDRV_DIR_OUT_ROOTFS)
 	tar xjf $(TOOLCHAIN_DIR)/$(TOOLCHAIN_RUNTIME_LIB)/$(TOOLCHAIN_RUNTIME_LIB_C) -C $(SYSDRV_DIR_OUT_ROOTFS)
-	# Move all files extracted from the toolchain library tarball's lib directory
-		@if [ -d "$(SYSDRV_DIR_OUT_ROOTFS)/lib" ]; then \
-		echo "Moving files from $(SYSDRV_DIR_OUT_ROOTFS)/lib to $(SYSDRV_DIR_OUT_BOARD)"; \
-		mv -fv $(SYSDRV_DIR_OUT_ROOTFS)/lib/* $(SYSDRV_DIR_OUT_BOARD)/ || true; \
-		rmdir $(SYSDRV_DIR_OUT_ROOTFS)/lib || true; \
+	# Move specific files extracted from the toolchain library tarball's lib directory if they exist
+	@if [ -d "$(SYSDRV_DIR_OUT_ROOTFS)/lib" ]; then \
+		echo "Moving specific files from $(SYSDRV_DIR_OUT_ROOTFS)/lib to $(SYSDRV_DIR_OUT_BOARD)"; \
+		find $(SYSDRV_DIR_OUT_ROOTFS)/lib -maxdepth 1 \( \
+			-name 'libasan_preinit.o' -o \
+			-name 'libasan.so*' -o \
+			-name 'libtsan.so*' -o \
+			-name 'libubsan.so*' -o \
+			-name 'libSegFault.so' -o \
+			-name 'libmemusage.so*' -o \
+			-name 'libpcprofile.so*' -o \
+			-name 'libthread_db*.so*' -o \
+			-name 'libBrokenLocale*' -o \
+			-name 'libinproctrace.so' \
+		\) -exec mv -fv {} $(SYSDRV_DIR_OUT_BOARD)/ \; || true; \
 	else \
 		echo "Warning: Directory $(SYSDRV_DIR_OUT_ROOTFS)/lib not found after extraction."; \
 	fi
-
-
 ##########################################################################################
 #   Build buildroot for CosmOS Kernel
 #   Author : Felix
@@ -453,7 +465,9 @@ drv: prepare
 		modules_install INSTALL_MOD_STRIP=1 \
 		INSTALL_MOD_PATH=$(KERNEL_DIR_DRV_KO)
 	$(AT)find $(KERNEL_DIR_DRV_KO)/lib/modules/*/kernel \
-		-name "*.ko" -type f -exec cp -fav {} $(SYSDRV_KERNEL_MOD_PATH) \;
+		\( -path '*/drivers/media/dvb-frontends' -o -path '*/drivers/media/tuners' \) -prune \
+		-o \
+		\( -name "*.ko" -type f -exec cp -fav {} $(SYSDRV_KERNEL_MOD_PATH) \; \)
 	@test ! -d drv_ko || ($(MAKE) O=$(SYSDRV_KERNEL_OBJS_OUTPUT_DIR) -C $(SYSDRV_DIR)/drv_ko KERNEL_DRV_KO_INSTALL_PATH=$(SYSDRV_KERNEL_MOD_PATH))
 	$(call MAROC_COPY_PKG_TO_SYSDRV_OUTPUT, $(OUTPUT_ROOTFS_SOURCE_DIR), $(SYSDRV_KERNEL_MOD_PATH), SELF)
 
@@ -467,7 +481,6 @@ drv_clean:
 ##########################################################################################
 
 ROOTFS_BUILD_ENV_SCRATCH := rootfs_prepare pctools buildroot boardtools drv
-ROOT_FS_WO_BUILDROOT := boardtools drv
 
 rootfs: $(ROOTFS_BUILD_ENV_SCRATCH)
 	@echo -e "$(C_GREEN) ==sysdrv== build rootfs  $(C_NORMAL)"
@@ -512,11 +525,10 @@ rootfs_clean:
 env: prepare
 	@$(MAKE) -C $(SYSDRV_DIR)/tools/pc/uboot_tools
 
-ifeq ($(BOOT_MEDIUM),sd_card)
 	@echo "blkdevparts=mmcblk1:$(CONFIG_SYSDRV_PARTITION)" > $(SYSDRV_UBOOT_ENV_CFG_FILE)
 	@test "$(ROOTFS_PART_NUM)" = "FAIL" || \
 		echo "sys_bootargs=root=/dev/mmcblk1p$(ROOTFS_PART_NUM)" >> $(SYSDRV_UBOOT_ENV_CFG_FILE)
-endif
+
 
 ifeq ($(findstring FAIL,$(ENV_PART_SIZE)),)
 	$(SYSDRV_DIR_OUT_PC)/mkenvimage -s $(ENV_PART_SIZE) -p 0x0 -o $(SYSDRV_DIR_OUT_IMAGE)/env.img $(SYSDRV_UBOOT_ENV_CFG_FILE)

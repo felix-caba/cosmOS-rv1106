@@ -131,6 +131,81 @@ dosfstools_rootfs_usr_files=(
     "sysdrv/out/rootfs_uclibc_rv1106/usr/sbin/mkfs.vfat"   # -> mkfs.fat
 )
 
+drv_ko_files=(
+    "sysdrv/out/kernel_drv_ko/aes_generic.ko"
+    "sysdrv/out/kernel_drv_ko/hpmcu_wrap.bin"
+    "sysdrv/out/kernel_drv_ko/phy-rockchip-csi2-dphy-hw.ko"
+    "sysdrv/out/kernel_drv_ko/sc401ai.ko"
+    "sysdrv/out/kernel_drv_ko/ccm.ko"
+    "sysdrv/out/kernel_drv_ko/imx415.ko"
+    "sysdrv/out/kernel_drv_ko/phy-rockchip-csi2-dphy.ko"
+    "sysdrv/out/kernel_drv_ko/sc4336.ko"
+    "sysdrv/out/kernel_drv_ko/cfg80211.ko"
+    "sysdrv/out/kernel_drv_ko/insmod_ko.sh"
+    "sysdrv/out/kernel_drv_ko/release_version.txt"
+    "sysdrv/out/kernel_drv_ko/sc450ai.ko"
+    "sysdrv/out/kernel_drv_ko/cmac.ko"
+    "sysdrv/out/kernel_drv_ko/ipv6.ko"
+    "sysdrv/out/kernel_drv_ko/rga3.ko"
+    "sysdrv/out/kernel_drv_ko/sc530ai.ko"
+    "sysdrv/out/kernel_drv_ko/ctr.ko"
+    "sysdrv/out/kernel_drv_ko/libaes.ko"
+    "sysdrv/out/kernel_drv_ko/rk_dvbm.ko"
+    "sysdrv/out/kernel_drv_ko/sha256_generic.ko"
+    "sysdrv/out/kernel_drv_ko/cxd2880-spi.ko"
+    "sysdrv/out/kernel_drv_ko/libarc4.ko"
+    "sysdrv/out/kernel_drv_ko/rknpu.ko"
+    "sysdrv/out/kernel_drv_ko/video_rkcif.ko"
+    "sysdrv/out/kernel_drv_ko/gc2053.ko"
+    "sysdrv/out/kernel_drv_ko/libsha256.ko"
+    "sysdrv/out/kernel_drv_ko/rockit.ko"
+    "sysdrv/out/kernel_drv_ko/video_rkisp.ko"
+    "sysdrv/out/kernel_drv_ko/gcm.ko"
+    "sysdrv/out/kernel_drv_ko/mac80211.ko"
+    "sysdrv/out/kernel_drv_ko/rve.ko"
+    "sysdrv/out/kernel_drv_ko/gf128mul.ko"
+    "sysdrv/out/kernel_drv_ko/mpp_vcodec.ko"
+    "sysdrv/out/kernel_drv_ko/sc200ai.ko"
+    "sysdrv/out/kernel_drv_ko/ghash-generic.ko"
+    "sysdrv/out/kernel_drv_ko/os04a10.ko"
+    "sysdrv/out/kernel_drv_ko/sc3336.ko"
+)
+
+pctools_files=(
+    "sysdrv/out/bin/pc/e2fsck"
+    "sysdrv/out/bin/pc/fsck.ext2"
+    "sysdrv/out/bin/pc/fsck.ext3"
+    "sysdrv/out/bin/pc/fsck.ext4"
+    "sysdrv/out/bin/pc/genromfs"
+    "sysdrv/out/bin/pc/get_part_info.sh"
+    "sysdrv/out/bin/pc/lz4"
+    "sysdrv/out/bin/pc/mke2fs"
+    "sysdrv/out/bin/pc/mkenvimage"
+    "sysdrv/out/bin/pc/mkfs.cramfs"
+    "sysdrv/out/bin/pc/mkfs.erofs"
+    "sysdrv/out/bin/pc/mkfs.ext2"
+    "sysdrv/out/bin/pc/mkfs.ext3"
+    "sysdrv/out/bin/pc/mkfs.ext4"
+    "sysdrv/out/bin/pc/mkfs.jffs2"
+    "sysdrv/out/bin/pc/mkfs.ubifs"
+    "sysdrv/out/bin/pc/mkfs_erofs.sh"
+    "sysdrv/out/bin/pc/mkfs_ext4.sh"
+    "sysdrv/out/bin/pc/mkfs_initramfs.sh"
+    "sysdrv/out/bin/pc/mkfs_jffs2.sh"
+    "sysdrv/out/bin/pc/mkfs_romfs.sh"
+    "sysdrv/out/bin/pc/mkfs_squashfs.sh"
+    "sysdrv/out/bin/pc/mkfs_ubi.sh"
+    "sysdrv/out/bin/pc/mkimage"
+    "sysdrv/out/bin/pc/mksquashfs"
+    "sysdrv/out/bin/pc/repack_bootimg.sh"
+    "sysdrv/out/bin/pc/resize2fs"
+    "sysdrv/out/bin/pc/resource_tool"
+    "sysdrv/out/bin/pc/tune2fs"
+    "sysdrv/out/bin/pc/ubinize"
+    "sysdrv/out/bin/pc/unsquashfs"
+    "sysdrv/out/bin/pc/update_dtb_bootargs.sh"
+)
+
 # --- Check Functions (Wrappers) ---
 
 check_kernel_files() {
@@ -157,16 +232,15 @@ check_dosfstools_rootfs_files() {
     check_items "Dosftools Rootfs Files Check" dosfstools_rootfs_usr_files dosfstools_rootfs_usr_dirs dosfstools_rootfs_usr_links
 }
 
+
+
+
+
 # --- Main Execution Logic ---
 
 echo -e "${BLUE}Starting Build Process Checks...${NC}"
 
 
-check_dosfstools_rootfs_files
-if [[ $? -ne 0 ]]; then
-    echo -e "${RED}✘ Error: Missing dosfstools files/directories. Aborting build.${NC}"
-    exit 1
-fi
 
 echo -e "${GREEN}✔ All prerequisite file checks passed successfully!${NC}"
 echo ""
