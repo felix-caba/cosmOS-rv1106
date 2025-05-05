@@ -36,14 +36,15 @@ output/
 Module.symvers
 modules.order
 
-# Configuraciones locales
 *.swp
 *.swo
 *.swn
 *.bak
 *.tmp
 
-# Archivos de entorno (opcional)
+
+sysdrv/tools/board/android-tools/android-tools
+
 .env
 *.env
 

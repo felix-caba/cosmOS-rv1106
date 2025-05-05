@@ -1,0 +1,11 @@
+prefix=/home/cosmOS-rv1106/sysdrv/tools/board/eudev/out
+exec_prefix=/home/cosmOS-rv1106/sysdrv/tools/board/eudev/out
+libdir=/home/cosmOS-rv1106/sysdrv/tools/board/eudev/out/lib
+includedir=/home/cosmOS-rv1106/sysdrv/tools/board/eudev/out/include
+
+Name: libkmod
+Description: Library to deal with kernel modules
+Version: 29
+Libs: -L${libdir} -lkmod
+Libs.private:   
+Cflags: -I${includedir}
