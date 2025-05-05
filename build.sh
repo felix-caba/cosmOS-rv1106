@@ -7,63 +7,142 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Función para chequear archivos y directorios del kernel compilado
-check_kernel_files() {
-    echo -e "${BLUE}--- Chequeando archivos del kernel y rootfs ---${NC}"
+check_items() {
+    local title="$1"
+    local -n files_to_check=$2
+    local -n dirs_to_check=$3
     local all_ok=true
-    local missing_files=()
+    local missing_items=()
+    local check_performed=false
 
-    # Lista de archivos y directorios a chequear en /out
-    local files_to_check=(
-        "sysdrv/out/bin/board_uclibc_rv1106/Image"
-        "sysdrv/out/bin/board_uclibc_rv1106/Image.gz"
-        "sysdrv/out/bin/board_uclibc_rv1106/resource.img"
-        "sysdrv/out/bin/board_uclibc_rv1106/rv1106g-luckfox-pico-pro.dtb"
-        "sysdrv/out/bin/board_uclibc_rv1106/vmlinux"
-        "sysdrv/out/bin/board_uclibc_rv1106/zImage"
-        "sysdrv/out/image_uclibc_rv1106/boot.img"
-    )
+    echo -e "${BLUE}--- $title ---${NC}"
 
-    # Chequeo de archivos en /out
-    for item in "${files_to_check[@]}"; do
-        if [[ -e "$item" ]]; then
-            echo -e " ${GREEN}✔${NC} Encontrado: $item"
-        else
-            echo -e " ${RED}✘${NC} Falta:     $item"
-            all_ok=false
-            missing_files+=("$item")
-        fi
-    done
-
-    # Chequeo del directorio de objetos del kernel compilado
-    local objs_kernel_dir="sysdrv/source/objs_kernel"
-    echo -e "${BLUE}--- Chequeando directorio de objetos del kernel ---${NC}"
-    if [[ -d "$objs_kernel_dir" ]]; then
-        echo -e " ${GREEN}✔${NC} Encontrado: $objs_kernel_dir (Objetos del kernel compilado)"
-    else
-        echo -e " ${RED}✘${NC} Falta:     $objs_kernel_dir (Objetos del kernel compilado)"
-        all_ok=false
-        missing_files+=("$objs_kernel_dir")
+    if [ ${#files_to_check[@]} -gt 0 ]; then
+        check_performed=true
+        echo -e "${BLUE}Checking files:${NC}"
+        for item in "${files_to_check[@]}"; do
+            local full_path="$item" 
+            if [[ -e "$full_path" ]]; then
+                echo -e " ${GREEN}✔${NC} Found: $full_path"
+            else
+                echo -e " ${RED}✘${NC} Missing: $full_path"
+                all_ok=false
+                missing_items+=("$full_path")
+            fi
+        done
     fi
 
-    # Resumen final
+    if [ ${#dirs_to_check[@]} -gt 0 ]; then
+        check_performed=true
+        echo -e "${BLUE}Checking directories:${NC}"
+        for item in "${dirs_to_check[@]}"; do
+            local full_path="$item" 
+            if [[ -d "$full_path" ]]; then
+                echo -e " ${GREEN}✔${NC} Found: $full_path"
+            else
+                echo -e " ${RED}✘${NC} Missing: $full_path"
+                all_ok=false
+                missing_items+=("$full_path")
+            fi
+        done
+    fi
+
+    # Summary
     echo -e "${BLUE}-------------------------------------------------${NC}"
-    if $all_ok; then
-        echo -e "${GREEN}✔ Todos los archivos y directorios necesarios existen.${NC}"
-        return 0 # Éxito
+    if ! $check_performed; then
+         echo -e "${YELLOW}ℹ No items specified for checking in '$title'.${NC}"
+         return 0 # Nothing to check, technically success
+    elif $all_ok; then
+        echo -e "${GREEN}✔ All required items for '$title' exist.${NC}"
+        return 0 # Success
     else
-        echo -e "${RED}✘ Faltan los siguientes archivos/directorios:${NC}"
-        for missing in "${missing_files[@]}"; do
+        echo -e "${RED}✘ Missing items for '$title':${NC}"
+        for missing in "${missing_items[@]}"; do
             echo -e "  - ${YELLOW}$missing${NC}"
         done
-        return 1 
+        return 1 # Failure
     fi
 }
 
-check_kernel_files
+
+kernel_files=(
+    "sysdrv/out/bin/board_uclibc_rv1106/Image"
+    "sysdrv/out/bin/board_uclibc_rv1106/Image.gz"
+    "sysdrv/out/bin/board_uclibc_rv1106/resource.img"
+    "sysdrv/out/bin/board_uclibc_rv1106/rv1106g-luckfox-pico-pro.dtb"
+    "sysdrv/out/bin/board_uclibc_rv1106/vmlinux"
+    "sysdrv/out/bin/board_uclibc_rv1106/zImage"
+    "sysdrv/out/image_uclibc_rv1106/boot.img"
+)
+kernel_dirs=(
+    "sysdrv/source/objs_kernel"
+)
+
+uboot_files=(
+    "sysdrv/out/bin/board_uclibc_rv1106/uboot.debug.tar.bz2"
+    "sysdrv/out/image_uclibc_rv1106/download.bin"
+    "sysdrv/out/image_uclibc_rv1106/idblock.img"
+    "sysdrv/out/image_uclibc_rv1106/uboot.img"
+)
+
+buildroot_rootfs_dirs=(
+    "sysdrv/out/rootfs_uclibc_rv1106"
+    "sysdrv/out/rootfs_uclibc_rv1106/bin"
+    "sysdrv/out/rootfs_uclibc_rv1106/dev"
+    "sysdrv/out/rootfs_uclibc_rv1106/etc"
+    "sysdrv/out/rootfs_uclibc_rv1106/lib"
+    "sysdrv/out/rootfs_uclibc_rv1106/media"
+    "sysdrv/out/rootfs_uclibc_rv1106/mnt"
+    "sysdrv/out/rootfs_uclibc_rv1106/opt"
+    "sysdrv/out/rootfs_uclibc_rv1106/proc"
+    "sysdrv/out/rootfs_uclibc_rv1106/root"
+    "sysdrv/out/rootfs_uclibc_rv1106/run"
+    "sysdrv/out/rootfs_uclibc_rv1106/sbin"
+    "sysdrv/out/rootfs_uclibc_rv1106/sys"
+    "sysdrv/out/rootfs_uclibc_rv1106/tmp"
+    "sysdrv/out/rootfs_uclibc_rv1106/usr"
+    "sysdrv/out/rootfs_uclibc_rv1106/var"
+)
+buildroot_rootfs_links=(
+    "sysdrv/out/rootfs_uclibc_rv1106/lib32"      # -> lib
+    "sysdrv/out/rootfs_uclibc_rv1106/linuxrc"    # -> bin/busybox
+)
+
+buildroot_rootfs_prereq_files=(
+    "sysdrv/source/buildroot/buildroot-2023.02.6/output/images/rootfs.tar"
+)
+
+# --- Check Functions (Wrappers) ---
+
+check_kernel_files() {
+    check_items "Kernel Files & Objects Check" kernel_files kernel_dirs
+}
+
+check_uboot_files() {
+    check_items "U-Boot Files & Dirs Check" uboot_files uboot_dirs
+}
+
+check_buildroot_rootfs_files() {
+    check_items "Buildroot Rootfs Prerequisite Check" buildroot_rootfs_prereq_files empty_array empty_array
+    local prereq_status=$?
+    if [[ $prereq_status -ne 0 ]]; then
+        echo -e "${YELLOW}ℹ Prerequisite rootfs.tar missing. Skipping detailed rootfs structure check.${NC}"
+        return 1
+    fi
+    echo ""
+    check_items "Buildroot Rootfs Structure Check" empty_array buildroot_rootfs_dirs buildroot_rootfs_links
+    return $? 
+}
+
+# --- Main Execution Logic ---
+
+echo -e "${BLUE}Starting Build Process Checks...${NC}"
+
+check_buildroot_rootfs_files
 if [[ $? -ne 0 ]]; then
-    echo -e "${RED}✘ Error: Faltan archivos o directorios necesarios.${NC}"
+    echo -e "${RED}✘ Error: Missing rootfs files/directories. Aborting build.${NC}"
     exit 1
 fi
 
-
+echo -e "${GREEN}✔ All prerequisite file checks passed successfully!${NC}"
+echo ""

@@ -231,7 +231,8 @@ SYSDRV_KERNEL_MOD_PATH:=$(SYSDRV_DIR)/out/kernel_drv_ko
 SYSDRV_ROOTFS_OUT_IMAGE := $(SYSDRV_DIR_OUT_IMAGE)/rootfs_base.img
 SYSDRV_UBOOT_ENV_CFG_FILE :=$(SYSDRV_DIR_OUT_IMAGE)/.env.txt
 
-OUTPUT_BOARD_BIN_PATH = $(SYSDRV_DIR)/$(OUT_BOARD)
+#OUTPUT_BOARD_BIN_PATH = $(SYSDRV_DIR)/$(OUT_BOARD)
+OUTPUT_BOARD_BIN_PATH :=
 
 KERNEL_DTB :=
 ifeq ($(ARCH),arm)
@@ -306,6 +307,7 @@ kernel: prepare
 
 	@echo -e "$(C_GREEN) ==sysdrv== build kernel  $(C_NORMAL)"
 	@echo -e "$(C_GREEN) SYSDRV_KERNEL_INSTALL_BOOTIMG = $(SYSDRV_KERNEL_INSTALL_BOOTIMG)  $(C_NORMAL)"
+	@echo -e "$(C_GREEN) SYSDRV_KERNEL_UPDATE_DTB = $(SYSDRV_KERNEL_UPDATE_DTB)  $(C_NORMAL)"
 
 	$(MAKE) -C $(KERNEL_DIR) ARCH=$(ARCH) mrproper
 
@@ -315,11 +317,6 @@ kernel: prepare
 		CROSS_COMPILE=$(CROSS_COMPILE) $(KERNEL_CFG) $(KERNEL_CFG_FRAGMENT) || exit 1
 	$(MAKE) O=$(SYSDRV_KERNEL_OBJS_OUTPUT_DIR) -C $(KERNEL_DIR) ARCH=$(ARCH) \
 		CROSS_COMPILE=$(CROSS_COMPILE) $(KERNEL_DTS:dts=img) BOOT_ITS=$(KERNEL_DIR)/boot.its -j$(SYSDRV_JOBS) || exit 1
-
-ifeq ($(SYSDRV_KERNEL_INSTALL_BOOTIMG),y)
-	cp -fv $(SYSDRV_KERNEL_OBJS_OUTPUT_DIR)/boot.img $(SYSDRV_DIR_OUT_IMAGE)/boot.img
-	$(call MAROC_COPY_PKG_TO_SYSDRV_OUTPUT, $(OUTPUT_IMAGE_PATH), $(SYSDRV_DIR_OUT_IMAGE)/boot.img)
-endif
 
 	# Start install kernel drivers
 	$(call MAROC_COPY_PKG_TO_SYSDRV_OUTPUT, $(SYSDRV_RAMDISK_DIR), \
@@ -386,6 +383,9 @@ buildroot_create:
 
 buildroot: prepare
 	@echo -e "$(C_GREEN) ==sysdrv== build buildroot   $(C_NORMAL)"
+ifeq ($(SKIP_BUILD),y)
+	@echo "SKIP_BUILD=y detected, skipping build steps."
+else
 	test -d $(BUILDROOT_DIR)/$(BUILDROOT_VER) || (\
 		mkdir -p $(BUILDROOT_DIR) ;\
 		tar xzf $(SYSDRV_DIR)/tools/board/buildroot/$(BUILDROOT_VER).tar.gz -C $(BUILDROOT_DIR) ;\
@@ -404,23 +404,12 @@ buildroot: prepare
 	$(SYSDRV_DIR)/tools/board/mirror_select/buildroot_mirror_select.sh $(BUILDROOT_DIR)/$(BUILDROOT_VER)/.config; \
 	)
 
-	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) source -C $(BUILDROOT_DIR)/$(BUILDROOT_VER) 
-	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -j$(SYSDRV_JOBS) -C $(BUILDROOT_DIR)/$(BUILDROOT_VER) 
-
-ifeq ($(SYSDRV_BUILD_RAMDISK_FLAG),YES)
-    tar xf $(SYSDRV_DIR)/tools/board/rootfs_script.tar -C $(BUILDROOT_DIR)/$(BUILDROOT_VER)/output/target
-	ifneq ($(OUTPUT_SYSDRV_RAMDISK_TINY_ROOTFS_DIR),)
-		$(call MAROC_COPY_PKG_TO_SYSDRV_OUTPUT, $(OUTPUT_SYSDRV_RAMDISK_TINY_ROOTFS_DIR), \
-			$(SYSDRV_DIR)/tools/board/buildroot/busybox/init \
-			$(BUILDROOT_DIR)/$(BUILDROOT_VER)/output/target)
-	else
-		$(call MAROC_COPY_PKG_TO_SYSDRV_OUTPUT, $(SYSDRV_DIR_OUT_ROOTFS), \
-			$(SYSDRV_DIR)/tools/board/buildroot/busybox/init \
-			$(BUILDROOT_DIR)/$(BUILDROOT_VER)/output/target)
-	endif
-else
-	tar xf $(BUILDROOT_DIR)/$(BUILDROOT_VER)/output/images/rootfs.tar -C $(SYSDRV_DIR_OUT_ROOTFS)
+	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) source -C $(BUILDROOT_DIR)/$(BUILDROOT_VER)
+	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -j$(SYSDRV_JOBS) -C $(BUILDROOT_DIR)/$(BUILDROOT_VER)
 endif
+
+	@tar xf $(BUILDROOT_DIR)/$(BUILDROOT_VER)/output/images/rootfs.tar -C $(SYSDRV_DIR_OUT_ROOTFS)
+
 
 buildroot_clean:
 	$(AT)rm -rf $(BUILDROOT_DIR)/$(BUILDROOT_VER)
