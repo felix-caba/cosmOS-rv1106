@@ -528,7 +528,7 @@ env: prepare
 	@echo "blkdevparts=mmcblk1:$(CONFIG_SYSDRV_PARTITION)" > $(SYSDRV_UBOOT_ENV_CFG_FILE)
 	@test "$(ROOTFS_PART_NUM)" = "FAIL" || \
 		echo "sys_bootargs=root=/dev/mmcblk1p$(ROOTFS_PART_NUM)" >> $(SYSDRV_UBOOT_ENV_CFG_FILE)
-
+		echo "sd_parts=mmcblk0:16K@512(env),512K@32K(idblock),4M(uboot)" >> $(SYSDRV_UBOOT_ENV_CFG_FILE)"
 
 ifeq ($(findstring FAIL,$(ENV_PART_SIZE)),)
 	$(SYSDRV_DIR_OUT_PC)/mkenvimage -s $(ENV_PART_SIZE) -p 0x0 -o $(SYSDRV_DIR_OUT_IMAGE)/env.img $(SYSDRV_UBOOT_ENV_CFG_FILE)
