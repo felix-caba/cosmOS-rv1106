@@ -35,7 +35,7 @@ fi
 declare -A files_to_move=(
     ["$PATCH_DIR/fiq_debugger.c"]="drivers/soc/rockchip/fiq_debugger/fiq_debugger.c"
     ["$PATCH_DIR/rv1106_defconfig"]="arch/arm/configs/rv1106_defconfig"
-    ["$PATCH_DIR/rv1106g-luckfox-pico-pro.dts"]="arch/arm/boot/dts/rv1106g-luckfox-pico-pro.dts"
+    ["$PATCH_DIR/rv1106g-luckfox-pico-max.dts"]="arch/arm/boot/dts/rv1106g-luckfox-pico-max.dts"
     ["$PATCH_DIR/rv1106-luckfox-pico-pro-max-ipc.dtsi"]="arch/arm/boot/dts/rv1106-luckfox-pico-pro-max-ipc.dtsi"
 )
 

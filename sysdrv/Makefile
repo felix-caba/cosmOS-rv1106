@@ -209,7 +209,7 @@ UBOOT_CFG_FRAGMENT = rk-emmc.config
 #KERNEL############################################################
 KERNEL_CFG := rv1106_defconfig
 KERNEL_CFG_FRAGMENT := rv1106-evb.config
-KERNEL_DTS := rv1106g-luckfox-pico-pro.dts
+KERNEL_DTS := rv1106g-luckfox-pico-max.dts
 KERNEL_DIR := $(SYSDRV_DIR)/source/kernel
 
 KERNEL_DIR_DRV_KO ?= $(SYSDRV_KERNEL_OBJS_OUTPUT_DIR)/drv_ko
@@ -527,12 +527,15 @@ env: prepare
 
 	@echo "blkdevparts=mmcblk1:$(CONFIG_SYSDRV_PARTITION)" > $(SYSDRV_UBOOT_ENV_CFG_FILE)
 	@test "$(ROOTFS_PART_NUM)" = "FAIL" || \
-		echo "sys_bootargs=root=/dev/mmcblk1p$(ROOTFS_PART_NUM)" >> $(SYSDRV_UBOOT_ENV_CFG_FILE)
-		echo "sd_parts=mmcblk0:16K@512(env),512K@32K(idblock),4M(uboot)" >> $(SYSDRV_UBOOT_ENV_CFG_FILE)"
+		echo "sys_bootargs= root=/dev/mmcblk1p7 rootfstype=ext4 rk_dma_heap_cma=66M" >> $(SYSDRV_UBOOT_ENV_CFG_FILE)
+	@echo "sd_parts=mmcblk0:16K@512(env),512K@32K(idblock),4M(uboot)" >> $(SYSDRV_UBOOT_ENV_CFG_FILE)
 
 ifeq ($(findstring FAIL,$(ENV_PART_SIZE)),)
 	$(SYSDRV_DIR_OUT_PC)/mkenvimage -s $(ENV_PART_SIZE) -p 0x0 -o $(SYSDRV_DIR_OUT_IMAGE)/env.img $(SYSDRV_UBOOT_ENV_CFG_FILE)
 endif
+
+# Also move to output/image
+	$(call MAROC_COPY_PKG_TO_SYSDRV_OUTPUT, $(OUTPUT_IMAGE_PATH), $(SYSDRV_DIR_OUT_IMAGE)/env.img)
 
 ##########################################################################################
 #	clean out
