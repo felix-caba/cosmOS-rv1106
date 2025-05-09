@@ -3,7 +3,7 @@
 #include "rk_gpio.h"
 #include "rk_pwm.h"
 #include "video.h"
-#include "../rv1126/rk_gpio.h"
+
 #include <rk_aiq_user_api2_acgc.h>
 #include <rk_aiq_user_api2_camgroup.h>
 #include <rk_aiq_user_api2_imgproc.h>

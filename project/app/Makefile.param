@@ -94,6 +94,16 @@ RK_APP_CROSS_CFLAGS := -mtune=cortex-a76.cortex-a55
 RK_APP_ARCH_TYPE := arm64
 endif
 
+ifneq ($(RK_JOBS),)
+RK_APP_JOBS:=$(RK_JOBS)
+endif
+ifeq ($(RK_APP_JOBS),)
+RK_APP_JOBS:=$(shell echo `getconf _NPROCESSORS_ONLN`)
+endif
+ifeq ($(RK_APP_JOBS),0)
+RK_APP_JOBS:=6
+endif
+
 ################################################################################
 ##   Public function and export
 ################################################################################
