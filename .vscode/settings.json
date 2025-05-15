@@ -11,7 +11,8 @@
         "cstdarg": "c",
         "stdarg.h": "c",
         "source.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "transferd.h": "c"
     },
     "C_Cpp.default.configurationProvider": null,
     "C_Cpp.default.intelliSenseMode": "linux-gcc-arm",
