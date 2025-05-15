@@ -48,8 +48,7 @@ for src in "${!files_to_move[@]}"; do
         mkdir -p "$(dirname "$dest")"
         # Move and force overwrite
         mv -f "$src" "$dest"
-        if [ $? -ne 0 ]; then
-            echo "Error moving $src. Exiting."
+        if [ $? -ne 0 ]; then echo "Error moving $src. Exiting."
             exit 1
         fi
     else

@@ -1,15 +1,17 @@
 {
     "configurations": [
         {
-            "name": "Mac",
+            "name": "Linux-arm",
             "includePath": [
-                "${default}"
+                "${workspaceFolder}/**",
+                "/home/felix/docker-shared/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include",
+                "/home/felix/docker-shared/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/include"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/clang",
-            "cStandard": "c17",
+            "compilerPath": "/home/felix/docker-shared/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc",
+            "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "macos-clang-arm64"
+            "intelliSenseMode": "linux-gcc-arm"
         }
     ],
     "version": 4
