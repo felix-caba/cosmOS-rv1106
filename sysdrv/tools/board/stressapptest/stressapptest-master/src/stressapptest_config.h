@@ -198,7 +198,7 @@
 #define STRESSAPPTEST_OS_LINUX /**/
 
 /* Timestamp when ./configure was executed */
-#define STRESSAPPTEST_TIMESTAMP "root @ 45f0b450b488 on Sat May 10 06:34:33 HKT 2025"
+#define STRESSAPPTEST_TIMESTAMP "root @ c08433171451 on Fri May  9 05:54:53 HKT 2025"
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1

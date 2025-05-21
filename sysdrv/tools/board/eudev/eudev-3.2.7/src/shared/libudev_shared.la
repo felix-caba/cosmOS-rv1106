@@ -17,7 +17,7 @@ old_library='libudev_shared.a'
 inherited_linker_flags=''
 
 # Libraries that this one depends upon.
-dependency_libs=' -L/home/cosmOS-rv1106/sysdrv/tools/board/eudev/out/lib'
+dependency_libs=' -L/home/luckfox-pico/sysdrv/tools/board/eudev/out/lib'
 
 # Names of additional weak libraries provided by this library
 weak_library_names=''

@@ -90,7 +90,7 @@ EGREP="/usr/bin/grep -E"
 FGREP="/usr/bin/grep -F"
 
 # A BSD- or MS-compatible name lister.
-NM="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/arm-rockchip830-linux-uclibcgnueabihf-nm -B"
+NM="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/arm-rockchip830-linux-uclibcgnueabihf-nm -B"
 
 # Whether we need soft or hard links.
 LN_S="ln -s"
@@ -167,7 +167,7 @@ lock_old_archive_extraction=no
 LTCC="arm-rockchip830-linux-uclibcgnueabihf-gcc"
 
 # LTCC compiler flags.
-LTCFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard -march=armv7-a -mfpu=neon -mfloat-abi=hard -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Os -I/home/cosmOS-rv1106/sysdrv/tools/board/eudev/out/include -L/home/cosmOS-rv1106/sysdrv/tools/board/eudev/out/lib -mthumb -Wa,-mimplicit-it=thumb -mthumb-interwork"
+LTCFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard -march=armv7-a -mfpu=neon -mfloat-abi=hard -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Os -I/home/luckfox-pico/sysdrv/tools/board/eudev/out/include -L/home/luckfox-pico/sysdrv/tools/board/eudev/out/lib -mthumb -Wa,-mimplicit-it=thumb -mthumb-interwork"
 
 # Take the output of nm and produce a listing of raw symbols and C names.
 global_symbol_pipe="sed -n -e 's/^.*[	 ]\\([ABCDGIRSTW][ABCDGIRSTW]*\\)[	 ][	 ]*\\([_A-Za-z][_A-Za-z0-9]*\\)\$/\\1 \\2 \\2/p' | sed '/ __gnu_lto/d'"
@@ -284,7 +284,7 @@ finish_eval=""
 hardcode_into_libs=yes
 
 # Compile-time system search path for libraries.
-sys_lib_search_path_spec="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0 /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/lib /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/lib /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib "
+sys_lib_search_path_spec="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0 /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/lib /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/lib /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib "
 
 # Detected run-time system search path for libraries.
 sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/lib/x86_64-linux-gnu/libfakeroot /usr/local/lib /usr/local/lib/x86_64-linux-gnu /lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu /lib32 /usr/lib32 /libx32 /usr/libx32 "
@@ -307,7 +307,7 @@ striplib="arm-rockchip830-linux-uclibcgnueabihf-strip --strip-unneeded"
 
 
 # The linker used to build libraries.
-LD="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/bin/ld"
+LD="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/bin/ld"
 
 # How to create reloadable object files.
 reload_flag=" -r"

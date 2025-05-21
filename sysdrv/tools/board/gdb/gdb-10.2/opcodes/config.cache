@@ -85,7 +85,7 @@ lt_cv_file_magic_test_file=${lt_cv_file_magic_test_file=}
 lt_cv_ld_reload_flag=${lt_cv_ld_reload_flag=-r}
 lt_cv_nm_interface=${lt_cv_nm_interface='BSD nm'}
 lt_cv_objdir=${lt_cv_objdir=.libs}
-lt_cv_path_LD=${lt_cv_path_LD=/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/ld}
+lt_cv_path_LD=${lt_cv_path_LD=/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/ld}
 lt_cv_path_NM=${lt_cv_path_NM=arm-rockchip830-linux-uclibcgnueabihf-nm}
 lt_cv_prog_compiler_c_o=${lt_cv_prog_compiler_c_o=yes}
 lt_cv_prog_compiler_pic_works=${lt_cv_prog_compiler_pic_works=yes}

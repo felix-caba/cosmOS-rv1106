@@ -45,7 +45,7 @@ TAR=tar
 SHELL=/bin/sh
 EXE=
 
-prefix =/home/cosmOS-rv1106/sysdrv/tools/board/toolkits/zlib/out
+prefix =/home/luckfox-pico/sysdrv/tools/board/toolkits/zlib/out
 exec_prefix =${prefix}
 libdir =${exec_prefix}/lib
 sharedlibdir =${libdir}

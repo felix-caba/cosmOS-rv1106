@@ -1,6 +1,6 @@
 #! /bin/bash
 # Generated automatically by config.status (mtd-utils) 2.0.1
-# Libtool was configured on host 45f0b450b488:
+# Libtool was configured on host c08433171451:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 
 # Provide generalized library-building support services.
@@ -91,7 +91,7 @@ EGREP="/usr/bin/grep -E"
 FGREP="/usr/bin/grep -F"
 
 # A BSD- or MS-compatible name lister.
-NM="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/arm-rockchip830-linux-uclibcgnueabihf-nm -B"
+NM="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/arm-rockchip830-linux-uclibcgnueabihf-nm -B"
 
 # Whether we need soft or hard links.
 LN_S="ln -s"
@@ -282,7 +282,7 @@ finish_eval=""
 hardcode_into_libs=yes
 
 # Compile-time system search path for libraries.
-sys_lib_search_path_spec="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0 /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/lib /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/lib /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib "
+sys_lib_search_path_spec="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0 /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/lib /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/lib /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib "
 
 # Detected run-time system search path for libraries.
 sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib /usr/lib/x86_64-linux-gnu/libfakeroot /usr/local/lib /usr/local/lib/x86_64-linux-gnu /lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu /lib32 /usr/lib32 /libx32 /usr/libx32 "
@@ -305,7 +305,7 @@ striplib="arm-rockchip830-linux-uclibcgnueabihf-strip --strip-unneeded"
 
 
 # The linker used to build libraries.
-LD="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/bin/ld"
+LD="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/bin/ld"
 
 # How to create reloadable object files.
 reload_flag=" -r"

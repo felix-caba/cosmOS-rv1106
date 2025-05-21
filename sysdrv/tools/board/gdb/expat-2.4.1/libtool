@@ -1,6 +1,6 @@
 #! /bin/bash
 # Generated automatically by config.status (expat) 2.4.1
-# Libtool was configured on host 45f0b450b488:
+# Libtool was configured on host c08433171451:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 
 # Provide generalized library-building support services.
@@ -100,7 +100,7 @@ EGREP="/usr/bin/grep -E"
 FGREP="/usr/bin/grep -F"
 
 # A BSD- or MS-compatible name lister.
-NM="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/arm-rockchip830-linux-uclibcgnueabihf-nm -B"
+NM="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/arm-rockchip830-linux-uclibcgnueabihf-nm -B"
 
 # Whether we need soft or hard links.
 LN_S="ln -s"
@@ -285,7 +285,7 @@ finish_eval=""
 hardcode_into_libs=yes
 
 # Compile-time system search path for libraries.
-sys_lib_search_path_spec="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0 /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/lib /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/lib /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib "
+sys_lib_search_path_spec="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0 /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/lib/gcc /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/lib /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/lib /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib "
 
 # Detected run-time system search path for libraries.
 sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/lib/x86_64-linux-gnu/libfakeroot /usr/local/lib /usr/local/lib/x86_64-linux-gnu /lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu /lib32 /usr/lib32 /libx32 /usr/libx32 "
@@ -308,7 +308,7 @@ striplib="arm-rockchip830-linux-uclibcgnueabihf-strip --strip-unneeded"
 
 
 # The linker used to build libraries.
-LD="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/bin/ld"
+LD="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/bin/ld"
 
 # How to create reloadable object files.
 reload_flag=" -r"
@@ -11724,7 +11724,7 @@ build_old_libs=`case $build_libtool_libs in yes) echo no;; *) echo yes;; esac`
 # ### BEGIN LIBTOOL TAG CONFIG: CXX
 
 # The linker used to build libraries.
-LD="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/bin/ld"
+LD="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/bin/ld"
 
 # How to create reloadable object files.
 reload_flag=" -r"
@@ -11855,17 +11855,17 @@ file_list_spec=""
 hardcode_action=immediate
 
 # The directories searched by this compiler when creating a shared library.
-compiler_lib_search_dirs="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0 /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/lib /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/lib /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib"
+compiler_lib_search_dirs="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0 /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/lib /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/lib /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib"
 
 # Dependencies to place before and after the objects being linked to
 # create a shared library.
-predep_objects="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib/crti.o /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/crtbeginS.o"
-postdep_objects="/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/crtendS.o /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib/crtn.o"
+predep_objects="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib/crti.o /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/crtbeginS.o"
+postdep_objects="/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/crtendS.o /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib/crtn.o"
 predeps=""
 postdeps="-lstdc++ -lm -lgcc_s -lc -lgcc_s"
 
 # The library search path used internally by the compiler when linking
 # a shared library.
-compiler_lib_search_path="-L/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0 -L/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc -L/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/lib -L/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/lib -L/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib"
+compiler_lib_search_path="-L/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0 -L/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc -L/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/lib -L/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/lib -L/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib"
 
 # ### END LIBTOOL TAG CONFIG: CXX

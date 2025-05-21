@@ -4,7 +4,7 @@
 
 DESTDIR		=
 
-prefix 		= /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/out
+prefix 		= /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/out
 exec_prefix 	= ${prefix}
 
 srcdir  = .

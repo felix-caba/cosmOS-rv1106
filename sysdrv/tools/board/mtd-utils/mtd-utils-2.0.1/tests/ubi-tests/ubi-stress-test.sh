@@ -1,6 +1,6 @@
 #!/bin/sh -euf
 
-prefix=/home/cosmOS-rv1106/sysdrv/tools/board/mtd-utils/mtd-utils-2.0.1/out
+prefix=/home/luckfox-pico/sysdrv/tools/board/mtd-utils/mtd-utils-2.0.1/out
 exec_prefix=${prefix}
 bindir=${exec_prefix}/bin
 libexecpath=${exec_prefix}/libexec/mtd-utils

@@ -34,13 +34,6 @@ tools_board-clean:
 	$(MAKE) -C $(SYSDRV_DIR)/tools/board/dosfstools distclean
 	$(MAKE) -C $(SYSDRV_DIR)/tools/board/exfatprogs distclean
 
-ENABLE_OTA := y
-ENABLE_I2C_TOOLS := y
-ENABLE_EUDEV := y
-ENABLE_GDB := y
-ENABLE_ADBD := y
-
-
 board-build-toolkits:
 	$(MAKE) -C $(SYSDRV_DIR)/tools/board/toolkits
 
@@ -75,8 +68,9 @@ ifeq ($(ENABLE_ROCKCHIP_TEST),y)
 endif
 
 board-build-e2fsprogs:
+ifeq ($(BOOT_MEDIUM),emmc)
 	$(MAKE) -C $(SYSDRV_DIR)/tools/board/e2fsprogs
-
+endif
 
 board-build-mtd_utils:
 ifneq ($(findstring $(BOOT_MEDIUM),spi_nand slc_nand spi_nor),)

@@ -299,16 +299,16 @@ distuninstallcheck_listfiles = find . -type f -print
 am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distcleancheck_listfiles = find . -type f -print
-ACLOCAL = ${SHELL} /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/missing aclocal-1.15
+ACLOCAL = ${SHELL} /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/missing aclocal-1.15
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
 AR = arm-rockchip830-linux-uclibcgnueabihf-ar
-AUTOCONF = ${SHELL} /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/missing autoconf
-AUTOHEADER = ${SHELL} /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/missing autoheader
-AUTOMAKE = ${SHELL} /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/missing automake-1.15
+AUTOCONF = ${SHELL} /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/missing autoconf
+AUTOHEADER = ${SHELL} /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/missing autoheader
+AUTOMAKE = ${SHELL} /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/missing automake-1.15
 AWK = gawk
 BFD_DEPENDENCIES = ../bfd/libbfd.la
-BFD_LIBADD = -Wl,/home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/libctf/../bfd/.libs/libbfd.so
+BFD_LIBADD = -Wl,/home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/libctf/../bfd/.libs/libbfd.so
 CATALOGS = 
 CATOBJEXT = 
 CC = arm-rockchip830-linux-uclibcgnueabihf-gcc
@@ -338,7 +338,7 @@ INSTALL_PROGRAM = /usr/bin/install -c
 INSTALL_SCRIPT = /usr/bin/install -c
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 INSTOBJEXT = 
-LD = /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/ld
+LD = /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/ld
 LDFLAGS =  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Os -march=armv7-a -mfpu=neon -mfloat-abi=hard -march=armv7-a -mfpu=neon -mfloat-abi=hard -mthumb -Wa,-mimplicit-it=thumb -mthumb-interwork
 LIBINTL = 
 LIBINTL_DEP = 
@@ -370,7 +370,7 @@ RANLIB = arm-rockchip830-linux-uclibcgnueabihf-ranlib
 SED = /usr/bin/sed
 SET_MAKE = 
 SHARED_LDFLAGS = 
-SHARED_LIBADD = -L/home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/libctf/../libiberty/pic -liberty
+SHARED_LIBADD = -L/home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/libctf/../libiberty/pic -liberty
 SHELL = /bin/bash
 STRIP = arm-rockchip830-linux-uclibcgnueabihf-strip
 USE_NLS = no
@@ -379,10 +379,10 @@ VERSION_FLAGS = -Wl,--version-script='./libctf.ver'
 WARN_PEDANTIC = -pedantic -Wno-long-long
 WERROR = 
 XGETTEXT = :
-abs_builddir = /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/libctf
-abs_srcdir = /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/libctf
-abs_top_builddir = /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/libctf
-abs_top_srcdir = /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/libctf
+abs_builddir = /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/libctf
+abs_srcdir = /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/libctf
+abs_top_builddir = /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/libctf
+abs_top_srcdir = /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/libctf
 ac_ct_AR = 
 ac_ct_CC = 
 ac_ct_DUMPBIN = 
@@ -414,7 +414,7 @@ host_vendor = rockchip830
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/install-sh
+install_sh = ${SHELL} /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -423,7 +423,7 @@ mandir = ${datarootdir}/man
 mkdir_p = $(MKDIR_P)
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/out
+prefix = /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/out
 program_transform_name = s,y,y,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -453,14 +453,14 @@ AM_CFLAGS = -std=gnu99 -Wall -W -Wall -Wno-narrowing -Wwrite-strings -Wmissing-f
 include_HEADERS = 
 #include_HEADERS = $(INCDIR)/ctf.h $(INCDIR)/ctf-api.h
 noinst_LTLIBRARIES = libctf.la libctf-nobfd.la
-libctf_nobfd_la_LIBADD = -L/home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/libctf/../libiberty/pic -liberty $(ZLIB)
+libctf_nobfd_la_LIBADD = -L/home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/libctf/../libiberty/pic -liberty $(ZLIB)
 libctf_nobfd_la_LDFLAGS = -version-info 0:0:0  -Wl,--version-script='./libctf.ver'
 libctf_nobfd_la_CPPFLAGS = $(AM_CPPFLAGS) -DNOBFD=1
 libctf_nobfd_la_SOURCES = ctf-archive.c ctf-dump.c ctf-create.c \
 	ctf-decl.c ctf-error.c ctf-hash.c ctf-labels.c ctf-dedup.c \
 	ctf-link.c ctf-lookup.c ctf-open.c ctf-sha1.c ctf-string.c \
 	ctf-subr.c ctf-types.c ctf-util.c $(am__append_1)
-libctf_la_LIBADD = -Wl,/home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/libctf/../bfd/.libs/libbfd.so $(libctf_nobfd_la_LIBADD)
+libctf_la_LIBADD = -Wl,/home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/libctf/../bfd/.libs/libbfd.so $(libctf_nobfd_la_LIBADD)
 libctf_la_CPPFLAGS = $(AM_CPPFLAGS) -DNOBFD=0
 libctf_la_DEPENDENCIES = ../bfd/libbfd.la
 libctf_la_LDFLAGS = $(libctf_nobfd_la_LDFLAGS)

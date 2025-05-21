@@ -1,7 +1,7 @@
-prefix=/home/cosmOS-rv1106/sysdrv/tools/board/eudev/out
-exec_prefix=/home/cosmOS-rv1106/sysdrv/tools/board/eudev/out
-libdir=/home/cosmOS-rv1106/sysdrv/tools/board/eudev/out/lib
-includedir=/home/cosmOS-rv1106/sysdrv/tools/board/eudev/out/include
+prefix=/home/luckfox-pico/sysdrv/tools/board/eudev/out
+exec_prefix=/home/luckfox-pico/sysdrv/tools/board/eudev/out
+libdir=/home/luckfox-pico/sysdrv/tools/board/eudev/out/lib
+includedir=/home/luckfox-pico/sysdrv/tools/board/eudev/out/include
 
 Name: blkid
 Description: Block device id library

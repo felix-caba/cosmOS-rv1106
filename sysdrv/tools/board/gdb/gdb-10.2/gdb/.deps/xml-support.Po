@@ -26,8 +26,8 @@ xml-support.o: xml-support.c defs.h ../gdbsupport/common-defs.h \
  ../gdbsupport/gdb_optional.h ../gdbsupport/traits.h \
  ../gdbsupport/filestuff.h ../gnulib/import/dirent.h \
  ../include/safe-ctype.h gdb_expat.h \
- /home/cosmOS-rv1106/sysdrv/tools/board/gdb/expat-2.4.1/out/include/expat.h \
- /home/cosmOS-rv1106/sysdrv/tools/board/gdb/expat-2.4.1/out/include/expat_external.h
+ /home/luckfox-pico/sysdrv/tools/board/gdb/expat-2.4.1/out/include/expat.h \
+ /home/luckfox-pico/sysdrv/tools/board/gdb/expat-2.4.1/out/include/expat_external.h
 
 defs.h:
 
@@ -173,6 +173,6 @@ gdb_obstack.h:
 
 gdb_expat.h:
 
-/home/cosmOS-rv1106/sysdrv/tools/board/gdb/expat-2.4.1/out/include/expat.h:
+/home/luckfox-pico/sysdrv/tools/board/gdb/expat-2.4.1/out/include/expat.h:
 
-/home/cosmOS-rv1106/sysdrv/tools/board/gdb/expat-2.4.1/out/include/expat_external.h:
+/home/luckfox-pico/sysdrv/tools/board/gdb/expat-2.4.1/out/include/expat_external.h:

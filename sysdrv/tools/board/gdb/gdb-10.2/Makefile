@@ -45,7 +45,7 @@ target=arm-rockchip830-linux-uclibcgnueabihf
 
 program_transform_name = s,y,y,
 
-prefix = /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/out
+prefix = /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/out
 exec_prefix = ${prefix}
 
 srcdir = .
@@ -91,7 +91,7 @@ MAINTAINER_MODE_TRUE = #
 # -------------------------------------------------
 
 # The gcc driver likes to know the arguments it was configured with.
-TOPLEVEL_CONFIGURE_ARGUMENTS=./configure --host=arm-rockchip830-linux-uclibcgnueabihf --target=arm-rockchip830-linux-uclibcgnueabihf --prefix=/home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/out --disable-gtk-doc --disable-gtk-doc-html --disable-doc --disable-docs --disable-documentation --with-xmlto=no --with-fop=no --disable-dependency-tracking --enable-ipv6 --disable-nls --disable-static --enable-shared --without-uiout --disable-gdbtk --without-x --disable-sim --disable-binutils --disable-install-libbfd --disable-ld --disable-gas --enable-gdbserver --with-curses --without-included-gettext --disable-werror --enable-static --without-mpfr --disable-tui --without-python --without-lzma --with-expat --with-libexpat-prefix=/home/cosmOS-rv1106/sysdrv/tools/board/gdb/expat-2.4.1/out --with-zlib
+TOPLEVEL_CONFIGURE_ARGUMENTS=./configure --host=arm-rockchip830-linux-uclibcgnueabihf --target=arm-rockchip830-linux-uclibcgnueabihf --prefix=/home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/out --disable-gtk-doc --disable-gtk-doc-html --disable-doc --disable-docs --disable-documentation --with-xmlto=no --with-fop=no --disable-dependency-tracking --enable-ipv6 --disable-nls --disable-static --enable-shared --without-uiout --disable-gdbtk --without-x --disable-sim --disable-binutils --disable-install-libbfd --disable-ld --disable-gas --enable-gdbserver --with-curses --without-included-gettext --disable-werror --enable-static --without-mpfr --disable-tui --without-python --without-lzma --with-expat --with-libexpat-prefix=/home/luckfox-pico/sysdrv/tools/board/gdb/expat-2.4.1/out --with-zlib
 
 tooldir = ${exec_prefix}/arm-rockchip830-linux-uclibcgnueabihf
 build_tooldir = ${exec_prefix}/arm-rockchip830-linux-uclibcgnueabihf
@@ -109,7 +109,7 @@ GCC_SHLIB_SUBDIR =
 BUILD_SUBDIR = build-x86_64-pc-linux-gnu
 # This is set by the configure script to the arguments to use when configuring
 # directories built for the build system.
-BUILD_CONFIGARGS =  --cache-file=./config.cache '--prefix=/home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/out' '--disable-gtk-doc' '--disable-gtk-doc-html' '--disable-doc' '--disable-docs' '--disable-documentation' '--with-xmlto=no' '--with-fop=no' '--disable-dependency-tracking' '--enable-ipv6' '--disable-nls' '--disable-static' '--enable-shared' '--without-uiout' '--disable-gdbtk' '--without-x' '--disable-sim' '--disable-binutils' '--disable-install-libbfd' '--disable-ld' '--disable-gas' '--enable-gdbserver' '--with-curses' '--without-included-gettext' '--disable-werror' '--enable-static' '--without-mpfr' '--disable-tui' '--without-python' '--without-lzma' '--with-expat' '--with-libexpat-prefix=/home/cosmOS-rv1106/sysdrv/tools/board/gdb/expat-2.4.1/out' '--with-zlib' --program-transform-name='s,y,y,' --disable-option-checking --with-build-subdir="$(BUILD_SUBDIR)"
+BUILD_CONFIGARGS =  --cache-file=./config.cache '--prefix=/home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/out' '--disable-gtk-doc' '--disable-gtk-doc-html' '--disable-doc' '--disable-docs' '--disable-documentation' '--with-xmlto=no' '--with-fop=no' '--disable-dependency-tracking' '--enable-ipv6' '--disable-nls' '--disable-static' '--enable-shared' '--without-uiout' '--disable-gdbtk' '--without-x' '--disable-sim' '--disable-binutils' '--disable-install-libbfd' '--disable-ld' '--disable-gas' '--enable-gdbserver' '--with-curses' '--without-included-gettext' '--disable-werror' '--enable-static' '--without-mpfr' '--disable-tui' '--without-python' '--without-lzma' '--with-expat' '--with-libexpat-prefix=/home/luckfox-pico/sysdrv/tools/board/gdb/expat-2.4.1/out' '--with-zlib' --program-transform-name='s,y,y,' --disable-option-checking --with-build-subdir="$(BUILD_SUBDIR)"
 
 # Linker flags to use on the host, for stage1 or when not
 # bootstrapping.
@@ -171,7 +171,7 @@ SUBDIRS =  intl libiberty opcodes bfd readline zlib libdecnumber libctf gdb gdbs
 TARGET_CONFIGDIRS = 
 # This is set by the configure script to the arguments to use when configuring
 # directories built for the host system.
-HOST_CONFIGARGS =  --cache-file=./config.cache  '--prefix=/home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/out' '--disable-gtk-doc' '--disable-gtk-doc-html' '--disable-doc' '--disable-docs' '--disable-documentation' '--with-xmlto=no' '--with-fop=no' '--disable-dependency-tracking' '--enable-ipv6' '--disable-nls' '--disable-static' '--enable-shared' '--without-uiout' '--disable-gdbtk' '--without-x' '--disable-sim' '--disable-binutils' '--disable-install-libbfd' '--disable-ld' '--disable-gas' '--enable-gdbserver' '--with-curses' '--without-included-gettext' '--disable-werror' '--enable-static' '--without-mpfr' '--disable-tui' '--without-python' '--without-lzma' '--with-expat' '--with-libexpat-prefix=/home/cosmOS-rv1106/sysdrv/tools/board/gdb/expat-2.4.1/out' '--with-zlib' --program-transform-name='s,y,y,' --disable-option-checking
+HOST_CONFIGARGS =  --cache-file=./config.cache  '--prefix=/home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/out' '--disable-gtk-doc' '--disable-gtk-doc-html' '--disable-doc' '--disable-docs' '--disable-documentation' '--with-xmlto=no' '--with-fop=no' '--disable-dependency-tracking' '--enable-ipv6' '--disable-nls' '--disable-static' '--enable-shared' '--without-uiout' '--disable-gdbtk' '--without-x' '--disable-sim' '--disable-binutils' '--disable-install-libbfd' '--disable-ld' '--disable-gas' '--enable-gdbserver' '--with-curses' '--without-included-gettext' '--disable-werror' '--enable-static' '--without-mpfr' '--disable-tui' '--without-python' '--without-lzma' '--with-expat' '--with-libexpat-prefix=/home/luckfox-pico/sysdrv/tools/board/gdb/expat-2.4.1/out' '--with-zlib' --program-transform-name='s,y,y,' --disable-option-checking
 # Host programs are put under this directory, which is . except if building
 # with srcdir=..
 HOST_SUBDIR = .
@@ -243,7 +243,7 @@ POSTSTAGE1_HOST_EXPORTS = \
 TARGET_SUBDIR = arm-rockchip830-linux-uclibcgnueabihf
 # This is set by the configure script to the arguments to use when configuring
 # directories built for the target.
-TARGET_CONFIGARGS = --cache-file=./config.cache --enable-multilib   '--prefix=/home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/out' '--disable-gtk-doc' '--disable-gtk-doc-html' '--disable-doc' '--disable-docs' '--disable-documentation' '--with-xmlto=no' '--with-fop=no' '--disable-dependency-tracking' '--enable-ipv6' '--disable-nls' '--disable-static' '--enable-shared' '--without-uiout' '--disable-gdbtk' '--without-x' '--disable-sim' '--disable-binutils' '--disable-install-libbfd' '--disable-ld' '--disable-gas' '--enable-gdbserver' '--with-curses' '--without-included-gettext' '--disable-werror' '--enable-static' '--without-mpfr' '--disable-tui' '--without-python' '--without-lzma' '--with-expat' '--with-libexpat-prefix=/home/cosmOS-rv1106/sysdrv/tools/board/gdb/expat-2.4.1/out' '--with-zlib' --program-transform-name='s,y,y,' --disable-option-checking --with-target-subdir="$(TARGET_SUBDIR)"
+TARGET_CONFIGARGS = --cache-file=./config.cache --enable-multilib   '--prefix=/home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/out' '--disable-gtk-doc' '--disable-gtk-doc-html' '--disable-doc' '--disable-docs' '--disable-documentation' '--with-xmlto=no' '--with-fop=no' '--disable-dependency-tracking' '--enable-ipv6' '--disable-nls' '--disable-static' '--enable-shared' '--without-uiout' '--disable-gdbtk' '--without-x' '--disable-sim' '--disable-binutils' '--disable-install-libbfd' '--disable-ld' '--disable-gas' '--enable-gdbserver' '--with-curses' '--without-included-gettext' '--disable-werror' '--enable-static' '--without-mpfr' '--disable-tui' '--without-python' '--without-lzma' '--with-expat' '--with-libexpat-prefix=/home/luckfox-pico/sysdrv/tools/board/gdb/expat-2.4.1/out' '--with-zlib' --program-transform-name='s,y,y,' --disable-option-checking --with-target-subdir="$(TARGET_SUBDIR)"
 # This is the list of variables to export in the environment when
 # configuring subdirectories for the target system.
 BASE_TARGET_EXPORTS = \
@@ -366,7 +366,7 @@ AR_FLAGS = rc
 CC = arm-rockchip830-linux-uclibcgnueabihf-gcc
 CXX = arm-rockchip830-linux-uclibcgnueabihf-g++
 DLLTOOL = arm-rockchip830-linux-uclibcgnueabihf-dlltool
-LD = /home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/ld
+LD = /home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/ld
 LIPO = arm-rockchip830-linux-uclibcgnueabihf-lipo
 NM = arm-rockchip830-linux-uclibcgnueabihf-nm
 OBJDUMP = arm-rockchip830-linux-uclibcgnueabihf-objdump
@@ -471,8 +471,8 @@ do-compare3 = $(do-compare)
 # Programs producing files for the TARGET machine
 # -----------------------------------------------
 
-AR_FOR_TARGET=/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/ar
-AS_FOR_TARGET=/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/as
+AR_FOR_TARGET=/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/ar
+AS_FOR_TARGET=/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/as
 CC_FOR_TARGET=$(STAGE_CC_WRAPPER) arm-rockchip830-linux-uclibcgnueabihf-cc
 
 # If GCC_FOR_TARGET is not overriden on the command line, then this
@@ -485,15 +485,15 @@ RAW_CXX_FOR_TARGET=$(STAGE_CC_WRAPPER) arm-rockchip830-linux-uclibcgnueabihf-c++
 GFORTRAN_FOR_TARGET=$(STAGE_CC_WRAPPER) arm-rockchip830-linux-uclibcgnueabihf-gfortran
 GOC_FOR_TARGET=$(STAGE_CC_WRAPPER) arm-rockchip830-linux-uclibcgnueabihf-gccgo
 DLLTOOL_FOR_TARGET=arm-rockchip830-linux-uclibcgnueabihf-dlltool
-LD_FOR_TARGET=/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/ld
+LD_FOR_TARGET=/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/ld
 
 LIPO_FOR_TARGET=arm-rockchip830-linux-uclibcgnueabihf-lipo
-NM_FOR_TARGET=/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/nm
-OBJDUMP_FOR_TARGET=/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/objdump
-OBJCOPY_FOR_TARGET=/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/objcopy
-RANLIB_FOR_TARGET=/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/ranlib
-READELF_FOR_TARGET=/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/readelf
-STRIP_FOR_TARGET=/home/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/strip
+NM_FOR_TARGET=/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/nm
+OBJDUMP_FOR_TARGET=/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/objdump
+OBJCOPY_FOR_TARGET=/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/objcopy
+RANLIB_FOR_TARGET=/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/ranlib
+READELF_FOR_TARGET=/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/readelf
+STRIP_FOR_TARGET=/home/luckfox-pico/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/../lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/../../../../arm-rockchip830-linux-uclibcgnueabihf/bin/strip
 WINDRES_FOR_TARGET=arm-rockchip830-linux-uclibcgnueabihf-windres
 WINDMC_FOR_TARGET=arm-rockchip830-linux-uclibcgnueabihf-windmc
 

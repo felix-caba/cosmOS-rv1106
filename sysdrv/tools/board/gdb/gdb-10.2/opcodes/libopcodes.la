@@ -17,7 +17,7 @@ old_library='libopcodes.a'
 inherited_linker_flags=''
 
 # Libraries that this one depends upon.
-dependency_libs=' -L/home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/opcodes/../libiberty/pic -liberty'
+dependency_libs=' -L/home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/opcodes/../libiberty/pic -liberty'
 
 # Names of additional weak libraries provided by this library
 weak_library_names=''
@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/out/lib'
+libdir='/home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/out/lib'

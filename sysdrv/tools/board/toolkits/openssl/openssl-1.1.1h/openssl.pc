@@ -1,4 +1,4 @@
-prefix=/home/cosmOS-rv1106/sysdrv/tools/board/toolkits/openssl/out
+prefix=/home/luckfox-pico/sysdrv/tools/board/toolkits/openssl/out
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

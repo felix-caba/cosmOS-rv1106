@@ -48,10 +48,10 @@ NOLTO_FLAGS = -fno-lto
 
 datarootdir = ${prefix}/share
 datadir = ${datarootdir}
-exec_prefix = /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/out
+exec_prefix = /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/out
 libdir = ${exec_prefix}/lib
 localedir = $(datadir)/locale
-prefix = /home/cosmOS-rv1106/sysdrv/tools/board/gdb/gdb-10.2/out
+prefix = /home/luckfox-pico/sysdrv/tools/board/gdb/gdb-10.2/out
 
 ADDITIONAL_OBJS = 
 

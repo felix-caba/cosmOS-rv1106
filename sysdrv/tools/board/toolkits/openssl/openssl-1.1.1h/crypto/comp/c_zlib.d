@@ -12,5 +12,5 @@ crypto/comp/c_zlib.o: crypto/comp/c_zlib.c include/openssl/objects.h \
  include/internal/cryptlib.h include/openssl/buffer.h \
  include/openssl/buffererr.h include/internal/nelem.h \
  include/internal/bio.h crypto/comp/comp_local.h \
- /home/cosmOS-rv1106/sysdrv/tools/board/toolkits/openssl/../zlib/out/include/zlib.h \
- /home/cosmOS-rv1106/sysdrv/tools/board/toolkits/openssl/../zlib/out/include/zconf.h
+ /home/luckfox-pico/sysdrv/tools/board/toolkits/openssl/../zlib/out/include/zlib.h \
+ /home/luckfox-pico/sysdrv/tools/board/toolkits/openssl/../zlib/out/include/zconf.h
