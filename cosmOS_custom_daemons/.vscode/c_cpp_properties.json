@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Linux-arm",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/felix/docker-shared/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include",
+                "/home/felix/docker-shared/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/include",
+                "yolo/include"
+            ],
+            "defines": [],
+            "compilerPath": "/home/felix/docker-shared/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-arm"
+        }
+    ],
+    "version": 4
+}

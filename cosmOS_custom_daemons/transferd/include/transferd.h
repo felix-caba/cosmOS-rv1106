@@ -56,16 +56,11 @@ typedef struct {
     int verbose;
 } transferd_config_t;
 
-int transferd_init(transferd_config_t* config);
-void transferd_cleanup(void);
-int transferd_process_data(void);
-
-int start_daemon(transferd_config_t* config);
+int start_daemon(void);
 int stop_daemon(void);
-int status_daemon(void);
+int debug_daemon(void);
 
 void log_message(const char* format, ...);
 void log_error(const char* format, ...);
-void log_debug(const char* format, ...);
 
 #endif /* TRANSFERD_H */
