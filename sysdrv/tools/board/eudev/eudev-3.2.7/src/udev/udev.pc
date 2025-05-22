@@ -1,6 +1,0 @@
-Name: udev
-Description: eudev
-Version: 220
-prefix=/home/luckfox-pico/sysdrv/tools/board/eudev/out
-exec_prefix=${prefix}
-udevdir=${exec_prefix}/lib/udev
