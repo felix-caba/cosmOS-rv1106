@@ -12,7 +12,9 @@
         "stdarg.h": "c",
         "source.h": "c",
         "stdint.h": "c",
-        "transferd.h": "c"
+        "transferd.h": "c",
+        "video.h": "c",
+        "rk_mpi_vo.h": "c"
     },
     "C_Cpp.default.configurationProvider": null,
     "C_Cpp.default.intelliSenseMode": "linux-gcc-arm",
