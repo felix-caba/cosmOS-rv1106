@@ -14,7 +14,9 @@
         "stdint.h": "c",
         "transferd.h": "c",
         "video.h": "c",
-        "rk_mpi_vo.h": "c"
+        "rk_mpi_vo.h": "c",
+        "device.h": "c",
+        "module.h": "c"
     },
     "C_Cpp.default.configurationProvider": null,
     "C_Cpp.default.intelliSenseMode": "linux-gcc-arm",

@@ -127,9 +127,11 @@ post_chk() {
 	fi
 
 	if [ -d "/oem/usr/share/iqfiles" ]; then
-		rkipc -a /oem/usr/share/iqfiles &
+		echo "Using IQ files"
+		#rkipc -a /oem/usr/share/iqfiles &
 	else
-		rkipc &
+		echo "Not using IQ files"
+		#rkipc &
 	fi
 }
 
