@@ -40,7 +40,7 @@ int start_daemon() {
                 return -1;
             }
         }
-        fclose(pid_file_check); // Cerrar después de leer o si fscanf falla
+        fclose(pid_file_check); 
     }
 
     pid_t pid, sid;
@@ -55,11 +55,9 @@ int start_daemon() {
         log_message("Daemon process created with PID: %d", pid);
         exit(EXIT_SUCCESS); // El padre termina exitosamente
     }
-
-    // Proceso hijo (daemon) continúa aquí
     umask(0); 
 
-    sid = setsid(); // Crear una nueva sesión
+    sid = setsid();
     if (sid < 0) {
         log_error("setsid failed: %s", strerror(errno));
         return -1; 
@@ -70,47 +68,53 @@ int start_daemon() {
         return -1;
     }
 
-    // Cerrar descriptores de archivo estándar
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
 
-    // Es buena práctica reabrir stdin, stdout, stderr a /dev/null
-    // para evitar problemas con librerías que esperan que estén abiertos.
     int fd_dev_null = open("/dev/null", O_RDWR);
     if (fd_dev_null != -1) {
         dup2(fd_dev_null, STDIN_FILENO);
         dup2(fd_dev_null, STDOUT_FILENO);
         dup2(fd_dev_null, STDERR_FILENO);
-        if (fd_dev_null > 2) { // No cerrar si es uno de los estándar (improbable aquí)
+        if (fd_dev_null > 2) { 
             close(fd_dev_null);
         }
     }
-
 
     signal(SIGTERM, signal_handler);
     signal(SIGINT, signal_handler); 
 
     FILE *pid_file_write = fopen(PID_FILE, "w");
+
     if (pid_file_write == NULL) {
-        return -1; 
+        log_error("Failed to open PID file %s for writing: %s", PID_FILE, strerror(errno));
+        _exit(EXIT_FAILURE);
     }
+
     fprintf(pid_file_write, "%d\n", getpid());
     fclose(pid_file_write);
 
     log_message("Daemon (PID: %d) started successfully and is running.", getpid());
-
-    while (!terminate_) {
-        log_message("Daemon (PID: %d) is alive...", getpid());
-        sleep(10); 
+     
+     if (transferd_logic_init() != 0) { 
+        log_error("Transferd: Failed to initialize transfer logic. Daemon exiting.");
+        unlink(PID_FILE); 
+        _exit(EXIT_FAILURE); 
     }
 
-    log_message("Daemon (PID: %d) received termination signal. Shutting down...", getpid());
+    while (!terminate_) {
+        log_message("Transferd (PID: %d) is running...", getpid());
+        transferd_loop();
+        usleep(200000);
+    }
+
+    log_message("Transferd (PID: %d) received termination signal. Shutting down...", getpid());
     if (unlink(PID_FILE) != 0) {
         log_error("Failed to remove PID file %s: %s", PID_FILE, strerror(errno));
     }
-    log_message("Daemon (PID: %d) has shut down.", getpid());
-    return 0; 
+    log_message("Transferd (PID: %d) has shut down.", getpid());
+    return 0;
 }
 
 int stop_daemon() {
@@ -134,8 +138,7 @@ int stop_daemon() {
     if (kill(pid_to_kill, SIGTERM) == -1) {
         if (errno == ESRCH) {
             log_error("Process with PID %d not found. Daemon may have already stopped or PID file is stale.", pid_to_kill);
-            // Considerar eliminar el archivo PID obsoleto aquí si se desea
-            // unlink(PID_FILE);
+            unlink(PID_FILE);
         } else {
             log_error("Could not send SIGTERM to process %d: %s.", pid_to_kill, strerror(errno));
         }

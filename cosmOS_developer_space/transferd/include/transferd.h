@@ -18,42 +18,16 @@ typedef enum {
     SOURCE_TYPE_YOLO
 } source_type_t;
 
-typedef enum {
-    TARGET_TYPE_NONE,
-    TARGET_TYPE_UART,
-    TARGET_TYPE_SOCKET
-} target_type_t;
-
 typedef struct {
     source_type_t source_type;
-    target_type_t target_type;
 
     union {
         struct {
             int pin;
             int poll_interval_ms;
         } gpio;
-
-        struct {
-            char* model_path;
-            int threshold;
-        } yolo;
     } source_config;
 
-    union {
-        struct {
-            char* device;
-            int baudrate;
-        } uart;
-
-        struct {
-            char* host;
-            int port;
-            int use_ssl;
-        } socket;
-    } target_config;
-
-    int verbose;
 } transferd_config_t;
 
 int start_daemon(void);
@@ -62,5 +36,13 @@ int debug_daemon(void);
 
 void log_message(const char* format, ...);
 void log_error(const char* format, ...);
+
+int transferd_loop(void);
+int transferd_logic_init(void);
+
+int transferd_load_config(const transferd_config_t* config);
+int load_config_from_file(transferd_config_t* config_out);
+int save_config_to_file(const transferd_config_t* config_in);
+const char* source_type_to_string(source_type_t type);
 
 #endif /* TRANSFERD_H */

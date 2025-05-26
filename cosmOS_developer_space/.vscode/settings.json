@@ -13,10 +13,15 @@
         "source.h": "c",
         "stdint.h": "c",
         "transferd.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "errno.h": "c",
+        "string.h": "c",
+        "cerrno": "c",
+        "wait.h": "c"
     },
     "C_Cpp.default.configurationProvider": "default",
     "C_Cpp.default.intelliSenseMode": "linux-gcc-arm",
     "C_Cpp.default.compilerPath": "/home/felix/docker-shared/cosmOS-rv1106/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc",
-    "C_Cpp.default.cStandard": "c11"
+    "C_Cpp.default.cStandard": "c11",
+    "cmake.sourceDirectory": "/home/felix/docker-shared/cosmOS-rv1106/cosmOS_developer_space/yolo"
 }
