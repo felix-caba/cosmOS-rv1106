@@ -104,7 +104,6 @@ int start_daemon() {
     }
 
     while (!terminate_) {
-        log_message("Transferd (PID: %d) is running...", getpid());
         transferd_loop();
         usleep(200000);
     }

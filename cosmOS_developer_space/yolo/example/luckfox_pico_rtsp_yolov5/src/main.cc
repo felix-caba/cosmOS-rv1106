@@ -212,8 +212,8 @@ int main(int argc, char *argv[])
 							ssize_t written_bytes = write(detection_output_fd, detection_line_buffer, len);
 							if (written_bytes == -1)
 							{
-								perror("YOLO: write to detection_output_fd failed");
-								break; // Exit the loop on write error
+								fprintf(stderr, "YOLO: Error writing to detection_output_fd (FD: %d). Return value: %zd, errno: %d (%s)\n",
+                                        detection_output_fd, written_bytes, errno, strerror(errno));
 							}
 							else if (written_bytes < len)
 							{
