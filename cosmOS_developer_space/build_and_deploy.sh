@@ -128,33 +128,29 @@ deploy_files() {
         exit 1
     fi
     
-   
     print_status "Stopping transferd daemon on target (if running)..."
-    ssh $TARGET_USER@$TARGET_IP "if [ -f /usr/bin/transferd ]; then /usr/bin/transferd stop 2>/dev/null || true; fi" || true
+    ssh -i ~/.ssh/id_ed25519 $TARGET_USER@$TARGET_IP "if [ -f /usr/bin/transferd ]; then /usr/bin/transferd stop 2>/dev/null || true; fi" || true
     
-   
     print_status "Deploying transferd to $TARGET_USER@$TARGET_IP:$TARGET_BIN_DIR/transferd"
     scp -i ~/.ssh/id_ed25519 "$TRANSFERD_BINARY" "$TARGET_USER@$TARGET_IP:$TARGET_BIN_DIR/transferd"
-    ssh $TARGET_USER@$TARGET_IP "chmod +x $TARGET_BIN_DIR/transferd"
+    ssh -i ~/.ssh/id_ed25519 $TARGET_USER@$TARGET_IP "chmod +x $TARGET_BIN_DIR/transferd"
     print_success "transferd deployed successfully"
-     file root@192.168.1.161:/path
 
-   
     print_status "Deploying YOLO to $TARGET_USER@$TARGET_IP:$TARGET_BIN_DIR/YOLO"
     scp -i ~/.ssh/id_ed25519 "$YOLO_BINARY" "$TARGET_USER@$TARGET_IP:$TARGET_BIN_DIR/YOLO"
-    ssh $TARGET_USER@$TARGET_IP "chmod +x $TARGET_BIN_DIR/YOLO"
+    ssh -i ~/.ssh/id_ed25519 $TARGET_USER@$TARGET_IP "chmod +x $TARGET_BIN_DIR/YOLO"
     print_success "YOLO deployed successfully"
    
     YOLO_MODEL_DIR="$WORKSPACE_DIR/yolo/example/luckfox_pico_rtsp_yolov5/model"
     if [ -d "$YOLO_MODEL_DIR" ]; then
         print_status "Deploying YOLO model files..."
-        ssh $TARGET_USER@$TARGET_IP "mkdir -p /usr/share/yolo/model"
-        scp -i ~/.ssh/id_ed25519-r "$YOLO_MODEL_DIR"/* "$TARGET_USER@$TARGET_IP:/usr/share/yolo/model/"
+        ssh -i ~/.ssh/id_ed25519 $TARGET_USER@$TARGET_IP "mkdir -p /usr/share/yolo/model"
+        scp -i ~/.ssh/id_ed25519 -r "$YOLO_MODEL_DIR"/* "$TARGET_USER@$TARGET_IP:/usr/share/yolo/model/"
         print_success "YOLO model files deployed"
     fi
     
     print_status "Setting up transferd configuration..."
-    ssh $TARGET_USER@$TARGET_IP "
+    ssh -i ~/.ssh/id_ed25519 $TARGET_USER@$TARGET_IP "
         if [ ! -f /etc/transferd.conf ]; then
             echo '# Transferd Configuration File' > /etc/transferd.conf
             echo 'source_type=YOLO' >> /etc/transferd.conf
@@ -166,7 +162,7 @@ deploy_files() {
     
     # Show deployed files info
     print_status "Verifying deployed files on target:"
-    ssh $TARGET_USER@$TARGET_IP "
+    ssh -i ~/.ssh/id_ed25519 $TARGET_USER@$TARGET_IP "
         echo 'Deployed binaries:'
         ls -la $TARGET_BIN_DIR/transferd $TARGET_BIN_DIR/YOLO 2>/dev/null || echo 'Some binaries not found'
         echo ''
