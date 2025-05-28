@@ -58,3 +58,4 @@ sysdrv/source/buildroot/
 sysdrv/tools/board/dosfstools/dosfstools-4.2
 /IMAGE/
 .BoardConfig.mk
+cosmOS_developer_space/transferd/transferd
