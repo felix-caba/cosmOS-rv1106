@@ -204,8 +204,7 @@ int main(int argc, char *argv[])
 					{ // Only if FD is valid
 						char detection_line_buffer[256];
 						int len = snprintf(detection_line_buffer, sizeof(detection_line_buffer),
-										   coco_cls_to_name(det_result->cls_id)
-						);
+                  		"%s\n", coco_cls_to_name(det_result->cls_id));
 
 						if (len > 0 && len < (int)sizeof(detection_line_buffer))
 						{

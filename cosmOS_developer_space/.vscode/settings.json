@@ -18,7 +18,8 @@
         "string.h": "c",
         "cerrno": "c",
         "wait.h": "c",
-        "in.h": "c"
+        "in.h": "c",
+        "pthread.h": "c"
     },
     "C_Cpp.default.configurationProvider": "default",
     "C_Cpp.default.intelliSenseMode": "linux-gcc-arm",

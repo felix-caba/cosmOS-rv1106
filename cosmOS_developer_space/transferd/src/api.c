@@ -3,6 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <errno.h>
+#include <time.h>
 #include "../include/transferd.h"
 
 static int server_fd = -1; // pipe read fd
@@ -32,7 +34,7 @@ static void* http_thread(void* arg){
     listen(server_fd, 3);
 
     log_message("HTTP Server started on 8080");
-    
+
      while (server_running) {
         int client_fd = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
         if (client_fd < 0) continue;
@@ -68,18 +70,22 @@ static void* http_thread(void* arg){
 
 int start_http_server(void) {
     server_running = 1;
+    
     if (pthread_create(&server_thread, NULL, http_thread, NULL) != 0) {
         log_error("Failed to create HTTP server thread");
+        server_running = 0;
         return -1;
     }
+    
+    pthread_detach(server_thread);  
     return 0;
 }
 
 void stop_http_server(void) {
     server_running = 0;
     if (server_fd >= 0) {
+        shutdown(server_fd, SHUT_RDWR); 
         close(server_fd);
         server_fd = -1;
     }
-    pthread_join(server_thread, NULL);
 }

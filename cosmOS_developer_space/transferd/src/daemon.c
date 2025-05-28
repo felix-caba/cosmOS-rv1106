@@ -108,6 +108,8 @@ int start_daemon() {
         usleep(200000);
     }
 
+    stop_http_server();
+
     log_message("Transferd (PID: %d) received termination signal. Shutting down...", getpid());
     if (unlink(PID_FILE) != 0) {
         log_error("Failed to remove PID file %s: %s", PID_FILE, strerror(errno));

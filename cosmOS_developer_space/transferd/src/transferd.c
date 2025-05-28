@@ -26,8 +26,8 @@ void usage()
     printf("  stop    Stop the transfer daemon\n");
     printf("  status  Show the status of the transfer daemon\n");
     printf("Options:\n");
-    printf("  -l,   Read the log file entirely\n");
-    printf("  -t + <type>,   Specify the transfer daemon type (HTTPS, SCREEN)\n");
+    printf("  -l + <option>  Specify the log file option (e.g., 'delete', 'view')\n");
+    printf("  -o + <type>,   Specify the transfer output (HTTPS, SCREEN)\n");
     printf("  -s + <type>,   Specify the source type (YOLO, GPIO)\n");
     printf("  -c,   Show configuration options\n");
     printf("  -h,   Show this help message\n");
@@ -335,15 +335,49 @@ int main(int argc, char *argv[])
     }
     else if (strcmp(argv[1], "-l") == 0)
     {
-        system("cat /var/log/transferd.log");
+
+        if (argc < 3)
+        {
+            printf("Please specify the log file option (e.g., 'delete', 'view').\n");
+            return 1;
+        }
+        if (strcmp(argv[2], "delete") == 0)
+        {
+            if (remove(LOG_FILE) == 0)
+            {
+                printf("Log file deleted successfully.\n");
+            }
+            else
+            {
+                printf("Failed to delete log file: %s\n", strerror(errno));
+            }
+        }
+        else if (strcmp(argv[2], "view") == 0)
+        {
+            system("cat /var/log/transferd.log");
+        }
+        else
+        {
+            printf("Invalid log file option. Use 'delete' or 'view'.\n");
+        }
+        
     }
-    else if (strcmp(argv[1], "-t") == 0)
+    else if (strcmp(argv[1], "-o") == 0)
     {
         if (argc < 3)
         {
             printf("Please specify the output type (HTTP or SCREEN).\n");
             return 1;
         }
+        
+        // Cargar configuración actual primero
+        if (load_config_from_file(&current_config) != 0)
+        {
+            // Si no existe config, usar valores por defecto
+            current_config.source_type = SOURCE_TYPE_YOLO;
+            current_config.output_type = OUTPUT_TYPE_HTTP;
+        }
+        
         if (strcmp(argv[2], "HTTP") == 0)
         {
             printf("Output type set to HTTP. Restart daemon for changes\n");
@@ -372,8 +406,8 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[1], "-c") == 0)
     {
         printf("Current configuration:\n");
-        printf("Source Type: %s\n", source_type_to_string(current_config.source_type));
-        printf("Output Type: %s\n", current_config.output_type == OUTPUT_TYPE_HTTP ? "HTTP" : "SCREEN");
+        system("cat /etc/transferd.conf");
+
     }
     else if (strcmp(argv[1], "-h") == 0)
     {
@@ -389,6 +423,18 @@ int main(int argc, char *argv[])
     }
     else if (strcmp(argv[1], "-s") == 0)
     {
+        if (argc < 3)
+        {
+            printf("Please specify the source type (YOLO or GPIO).\n");
+            return 1;
+        }
+        
+        if (load_config_from_file(&current_config) != 0)
+        {
+            current_config.source_type = SOURCE_TYPE_YOLO;
+            current_config.output_type = OUTPUT_TYPE_HTTP;
+        }
+        
         if (strcmp(argv[2], "YOLO") == 0)
         {
             printf("Source type set to YOLO. Restart daemon for changes\n");
