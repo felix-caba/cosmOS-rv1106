@@ -284,11 +284,13 @@ int transferd_logic_init()
         return -1;
     }
 
-    // http
-    if (start_http_server() != 0) {
+    if (current_config.output_type == OUTPUT_TYPE_HTTP) {
+        if (start_http_server() != 0) {
         log_error("Failed to start HTTP server");
         return -1;
+        }
     }
+    
 
     log_message("TRANSFERD: Configuration loaded successfully. Source: %s",
                 source_type_to_string(current_config.source_type));
