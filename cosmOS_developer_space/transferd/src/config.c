@@ -31,6 +31,20 @@ const char* source_type_to_string(source_type_t type) {
     }
 }
 
+static output_type_t string_to_output_type(const char* str) {
+    if (strcasecmp(str, "SCREEN") == 0) return OUTPUT_TYPE_SCREEN;
+    if (strcasecmp(str, "HTTP") == 0) return OUTPUT_TYPE_HTTP;
+    return OUTPUT_TYPE_HTTP;
+}
+
+const char* output_type_to_string(output_type_t type) {
+    switch (type) {
+        case OUTPUT_TYPE_SCREEN: return "SCREEN";
+        case OUTPUT_TYPE_HTTP: return "HTTP";
+        default: return "UNKNOWN";
+    }
+}
+
 
 
 int load_config_from_file(transferd_config_t* config_out);
@@ -59,7 +73,7 @@ int load_config_from_file(transferd_config_t* config_out) {
 
         char *delimiter = strchr(trimmed_line, '=');
         if (delimiter) {
-            *delimiter = '\0'; // Null-terminate the key
+            *delimiter = '\0';
             strncpy(key, trim_whitespace(trimmed_line), sizeof(key) - 1);
             key[sizeof(key) -1] = '\0';
 
@@ -69,6 +83,11 @@ int load_config_from_file(transferd_config_t* config_out) {
             if (strcasecmp(key, "source_type") == 0) {
                 config_out->source_type = string_to_source_type(value_str);
             } 
+
+            if (strcasecmp(key, "output_type") == 0) {
+                config_out->output_type = string_to_output_type(value_str);
+            }
+
         }
     }
     fclose(file);
@@ -87,6 +106,7 @@ int save_config_to_file(const transferd_config_t* config_in) {
 
     fprintf(file, "# Transferd Configuration File\n");
     fprintf(file, "source_type=%s\n", source_type_to_string(config_in->source_type));
+    fprintf(file, "output_type=%s\n", output_type_to_string(config_in->output_type));
 
     fclose(file);
     log_message("Configuration saved to %s", CONFIG_FILE);
@@ -101,8 +121,10 @@ int transferd_load_config(const transferd_config_t* config_to_apply) {
         current_config = *config_to_apply;
     
         log_message("Transfer logic initialized with new config. Source: %s, Target: %s",
-                    source_type_to_string(current_config.source_type));
-        return 1; 
+                    source_type_to_string(current_config.source_type),
+                    output_type_to_string(current_config.output_type));
+
+        return 1;
     } else {
         log_error("Failed to initialize transfer logic: null config provided to apply.");
    

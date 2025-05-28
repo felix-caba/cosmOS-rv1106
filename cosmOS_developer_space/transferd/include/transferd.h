@@ -18,9 +18,15 @@ typedef enum {
     SOURCE_TYPE_YOLO
 } source_type_t;
 
+typedef enum {
+    OUTPUT_TYPE_SCREEN,
+    OUTPUT_TYPE_HTTP
+} output_type_t;
+
 typedef struct {
     source_type_t source_type;
-
+    output_type_t output_type;
+    
     union {
         struct {
             int pin;
@@ -44,5 +50,9 @@ int transferd_load_config(const transferd_config_t* config);
 int load_config_from_file(transferd_config_t* config_out);
 int save_config_to_file(const transferd_config_t* config_in);
 const char* source_type_to_string(source_type_t type);
+
+int start_http_server(void);
+void stop_http_server(void);
+void update_detection(const char* object_name);
 
 #endif /* TRANSFERD_H */

@@ -25,7 +25,7 @@ endif
 # Compiler flags
 # Add any necessary sysroot, march, mfloat-abi flags if not handled by the toolchain's specs file
 CFLAGS = -Wall -g -Iinclude 
-LDFLAGS =
+LDFLAGS = -lpthread
 
 # Executable name
 TARGET = transferd
@@ -39,6 +39,7 @@ SRCS = $(SRC_DIR)/config.c \
 	   $(SRC_DIR)/daemon.c \
 	   $(SRC_DIR)/log.c \
 	   $(SRC_DIR)/transferd.c \
+	   $(SRC_DIR)/api.c \
 	   $(SOURCES_SUBDIR)/gpio.c \
 	   $(SOURCES_SUBDIR)/yolo.c
 

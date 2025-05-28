@@ -17,7 +17,8 @@
         "errno.h": "c",
         "string.h": "c",
         "cerrno": "c",
-        "wait.h": "c"
+        "wait.h": "c",
+        "in.h": "c"
     },
     "C_Cpp.default.configurationProvider": "default",
     "C_Cpp.default.intelliSenseMode": "linux-gcc-arm",
