@@ -26,7 +26,8 @@ void usage()
     printf("  stop    Stop the transfer daemon\n");
     printf("  status  Show the status of the transfer daemon\n");
     printf("Options:\n");
-    printf("  -t + <type>,   Specify the transfer daemon type (UART, SOCKET)\n");
+    printf("  -l,   Read the log file entirely\n");
+    printf("  -t + <type>,   Specify the transfer daemon type (HTTPS, SCREEN)\n");
     printf("  -s + <type>,   Specify the source type (YOLO, GPIO)\n");
     printf("  -c,   Show configuration options\n");
     printf("  -h,   Show this help message\n");
@@ -202,7 +203,9 @@ int transferd_loop()
                 while (line != NULL)
                 {
                     log_message("YOLO_DETECTION_DATA: %s", line);
-                    // TODO
+                    
+                    update_detection(line); 
+
                     line = strtok(NULL, "\n");
                 }
             }
@@ -329,6 +332,48 @@ int main(int argc, char *argv[])
             }
             fclose(fp);
         }
+    }
+    else if (strcmp(argv[1], "-l") == 0)
+    {
+        system("cat /var/log/transferd.log");
+    }
+    else if (strcmp(argv[1], "-t") == 0)
+    {
+        if (argc < 3)
+        {
+            printf("Please specify the output type (HTTP or SCREEN).\n");
+            return 1;
+        }
+        if (strcmp(argv[2], "HTTP") == 0)
+        {
+            printf("Output type set to HTTP. Restart daemon for changes\n");
+            current_config.output_type = OUTPUT_TYPE_HTTP;
+            if (save_config_to_file(&current_config) != 0)
+            {
+                printf("Failed to save configuration.\n");
+                return 1;
+            }
+        }
+        else if (strcmp(argv[2], "SCREEN") == 0)
+        {
+            printf("Output type set to SCREEN. Restart daemon for changes\n");
+            current_config.output_type = OUTPUT_TYPE_SCREEN;
+            if (save_config_to_file(&current_config) != 0)
+            {
+                printf("Failed to save configuration.\n");
+                return 1;
+            }
+        }
+        else
+        {
+            printf("Invalid output type. Use 'HTTP' or 'SCREEN'.\n");
+        }
+    }
+    else if (strcmp(argv[1], "-c") == 0)
+    {
+        printf("Current configuration:\n");
+        printf("Source Type: %s\n", source_type_to_string(current_config.source_type));
+        printf("Output Type: %s\n", current_config.output_type == OUTPUT_TYPE_HTTP ? "HTTP" : "SCREEN");
     }
     else if (strcmp(argv[1], "-h") == 0)
     {

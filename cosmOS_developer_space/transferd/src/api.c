@@ -32,7 +32,7 @@ static void* http_thread(void* arg){
     listen(server_fd, 3);
 
     log_message("HTTP Server started on 8080");
-
+    
      while (server_running) {
         int client_fd = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
         if (client_fd < 0) continue;
