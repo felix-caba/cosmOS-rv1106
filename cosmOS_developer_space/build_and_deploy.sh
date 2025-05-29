@@ -1,303 +1,186 @@
 #!/bin/bash
 
-# Build and Deploy Script for transferd and YOLO
+# Build and Deploy script for cosmOS applications
 # Author: felix@cosmOS
-# Description: Compiles both transferd and YOLO using CMake, then deploys to target device
 
-set -e  # Exit on any error
+set -e
 
-# Configuration
-TARGET_IP="192.168.1.164"
-TARGET_USER="root"
-TARGET_BIN_DIR="/usr/bin"
-WORKSPACE_DIR="/home/felix/docker-shared/cosmOS-rv1106/cosmOS_developer_space"
+REMOTE_HOST="root@192.168.1.164"
+REMOTE_PATH="/usr/bin"
+BASE_DIR="/home/felix/docker-shared/cosmOS-rv1106/cosmOS_developer_space"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+echo "=== cosmOS Build and Deploy Script ==="
+echo "Target: $REMOTE_HOST:$REMOTE_PATH"
+echo ""
 
-# Function to print colored output
-print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-check_target_connectivity() {
-    print_status "Checking connectivity to target device $TARGET_USER@$TARGET_IP..."
-    if ping -c 1 -W 3 $TARGET_IP > /dev/null 2>&1; then
-        print_success "Target device is reachable"
-    else
-        print_error "Cannot reach target device $TARGET_IP"
-        exit 1
+check_ssh() {
+    echo "Checking SSH connectivity to $REMOTE_HOST..."
+    
+    # Intentar con la key ed25519
+    echo "Trying SSH with ed25519 key..."
+    if ssh -i ~/.ssh/id_ed25519 -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=no $REMOTE_HOST "echo 'SSH connection successful'" 2>/dev/null; then
+        echo "✓ SSH connection OK (ed25519)"
+        return 0
     fi
+    
+    # Intentar sin especificar key
+    echo "Trying SSH with default keys..."
+    if ssh -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=no $REMOTE_HOST "echo 'SSH connection successful'" 2>/dev/null; then
+        echo "✓ SSH connection OK (default)"
+        return 0
+    fi
+    
+    # Último intento: modo interactivo
+    echo "Batch mode failed, trying interactive mode..."
+    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no $REMOTE_HOST "echo 'SSH connection successful'" 2>/dev/null; then
+        echo "✓ SSH connection OK (interactive)"
+        echo "Note: Deployment will use interactive authentication"
+        return 0
+    fi
+    
+    # Si todo falla
+    echo "✗ SSH connection completely failed"
+    echo "Debug info:"
+    echo "- Host: $REMOTE_HOST"
+    echo "- Keys available:"
+    ls -la ~/.ssh/id_* 2>/dev/null || echo "  No keys found"
+    echo "- Testing manual connection (this should work):"
+    echo "  ssh $REMOTE_HOST"
+    return 1
 }
 
+# Function to build transferd
 build_transferd() {
-    print_status "Building transferd with CMake..."
-    cd "$WORKSPACE_DIR/transferd"
-    
-    # Clean previous build
-    if [ -d "build" ]; then
-        rm -rf build
-        print_status "Cleaned previous transferd build"
-    fi
-    
-    if [ -d "install" ]; then
-        rm -rf install
-        print_status "Cleaned previous transferd install"
-    fi
-    
-    # Create build directory and configure
-    mkdir -p build
-    cd build
-    
-    print_status "Configuring transferd with CMake..."
-    cmake -DCMAKE_BUILD_TYPE=Release ..
-    
-    print_status "Compiling transferd..."
-    make -j$(nproc)
-    
-    print_status "Installing transferd..."
-    make install
-    
-    # Check if executable was created
-    TRANSFERD_EXECUTABLE="$WORKSPACE_DIR/transferd/install/bin/transferd"
-    if [ -f "$TRANSFERD_EXECUTABLE" ]; then
-        print_success "transferd compiled successfully"
-        ls -la "$TRANSFERD_EXECUTABLE"
-        file "$TRANSFERD_EXECUTABLE"
-    else
-        print_error "transferd compilation failed - executable not found at $TRANSFERD_EXECUTABLE"
-        exit 1
-    fi
-}
-
-build_yolo() {
-    print_status "Building YOLO with CMake..."
-    cd "$WORKSPACE_DIR/yolo"
-    
-    # Clean previous build
-    if [ -d "build" ]; then
-        rm -rf build
-        print_status "Cleaned previous YOLO build"
-    fi
-    
-    if [ -d "install" ]; then
-        rm -rf install
-        print_status "Cleaned previous YOLO install"
-    fi
-    
-    # Create build directory and configure
-    mkdir -p build
-    cd build
-    
-    print_status "Configuring YOLO with CMake..."
-    cmake -DCMAKE_BUILD_TYPE=Release ..
-    
-    print_status "Compiling YOLO..."
-    make -j$(nproc)
-    
-    print_status "Installing YOLO..."
-    make install
-    
-    # Check if YOLO executable was created
-    YOLO_EXECUTABLE="$WORKSPACE_DIR/yolo/install/uclibc/luckfox_pico_rtsp_yolov5_demo/luckfox_pico_rtsp_yolov5"
-    if [ -f "$YOLO_EXECUTABLE" ]; then
-        print_success "YOLO compiled successfully"
-        ls -la "$YOLO_EXECUTABLE"
-        file "$YOLO_EXECUTABLE"
-    else
-        print_error "YOLO compilation failed - executable not found at $YOLO_EXECUTABLE"
-        print_status "Checking install directory contents:"
-        find "$WORKSPACE_DIR/yolo/install" -name "*yolo*" -o -name "*luckfox*" 2>/dev/null || true
-        exit 1
-    fi
-}
-
-deploy_files() {
-    print_status "Deploying files to target device..."
-    
-    TRANSFERD_BINARY="$WORKSPACE_DIR/transferd/install/bin/transferd"
-    YOLO_BINARY="$WORKSPACE_DIR/yolo/install/uclibc/luckfox_pico_rtsp_yolov5_demo/luckfox_pico_rtsp_yolov5"
-    
-    # Check if binaries exist
-    if [ ! -f "$TRANSFERD_BINARY" ]; then
-        print_error "transferd binary not found at $TRANSFERD_BINARY"
-        exit 1
-    fi
-    
-    if [ ! -f "$YOLO_BINARY" ]; then
-        print_error "YOLO binary not found at $YOLO_BINARY"
-        exit 1
-    fi
-    
-    print_status "Stopping transferd daemon on target (if running)..."
-    ssh -i ~/.ssh/id_ed25519 $TARGET_USER@$TARGET_IP "if [ -f /usr/bin/transferd ]; then /usr/bin/transferd stop 2>/dev/null || true; fi" || true
-    
-    print_status "Deploying transferd to $TARGET_USER@$TARGET_IP:$TARGET_BIN_DIR/transferd"
-    scp -i ~/.ssh/id_ed25519 "$TRANSFERD_BINARY" "$TARGET_USER@$TARGET_IP:$TARGET_BIN_DIR/transferd"
-    ssh -i ~/.ssh/id_ed25519 $TARGET_USER@$TARGET_IP "chmod +x $TARGET_BIN_DIR/transferd"
-    print_success "transferd deployed successfully"
-
-    print_status "Deploying YOLO to $TARGET_USER@$TARGET_IP:$TARGET_BIN_DIR/YOLO"
-    scp -i ~/.ssh/id_ed25519 "$YOLO_BINARY" "$TARGET_USER@$TARGET_IP:$TARGET_BIN_DIR/YOLO"
-    ssh -i ~/.ssh/id_ed25519 $TARGET_USER@$TARGET_IP "chmod +x $TARGET_BIN_DIR/YOLO"
-    print_success "YOLO deployed successfully"
-   
-    YOLO_MODEL_DIR="$WORKSPACE_DIR/yolo/example/luckfox_pico_rtsp_yolov5/model"
-    if [ -d "$YOLO_MODEL_DIR" ]; then
-        print_status "Deploying YOLO model files..."
-        ssh -i ~/.ssh/id_ed25519 $TARGET_USER@$TARGET_IP "mkdir -p /usr/share/yolo/model"
-        scp -i ~/.ssh/id_ed25519 -r "$YOLO_MODEL_DIR"/* "$TARGET_USER@$TARGET_IP:/usr/share/yolo/model/"
-        print_success "YOLO model files deployed"
-    fi
-    
-    print_status "Setting up transferd configuration..."
-    ssh -i ~/.ssh/id_ed25519 $TARGET_USER@$TARGET_IP "
-        if [ ! -f /etc/transferd.conf ]; then
-            echo '# Transferd Configuration File' > /etc/transferd.conf
-            echo 'source_type=YOLO' >> /etc/transferd.conf
-            echo 'Configuration file created at /etc/transferd.conf'
-        else
-            echo 'Configuration file already exists at /etc/transferd.conf'
-        fi
-    "
-    
-    # Show deployed files info
-    print_status "Verifying deployed files on target:"
-    ssh -i ~/.ssh/id_ed25519 $TARGET_USER@$TARGET_IP "
-        echo 'Deployed binaries:'
-        ls -la $TARGET_BIN_DIR/transferd $TARGET_BIN_DIR/YOLO 2>/dev/null || echo 'Some binaries not found'
-        echo ''
-        echo 'Binary information:'
-        file $TARGET_BIN_DIR/transferd $TARGET_BIN_DIR/YOLO 2>/dev/null || true
-        echo ''
-        echo 'Available disk space:'
-        df -h $TARGET_BIN_DIR
-    "
-}
-
-show_usage() {
-    echo "Usage: $0 [options]"
-    echo "Options:"
-    echo "  -h, --help          Show this help message"
-    echo "  -t, --target IP     Set target IP address (default: $TARGET_IP)"
-    echo "  -u, --user USER     Set target username (default: $TARGET_USER)"
-    echo "  --transferd-only    Build and deploy only transferd"
-    echo "  --yolo-only         Build and deploy only YOLO"
-    echo "  --no-deploy         Build only, skip deployment"
-    echo "  --deploy-only       Deploy only, skip building"
-    echo "  --debug             Build with debug symbols (default: Release)"
-}
-
-main() {
-    local build_transferd=true
-    local build_yolo=true
-    local deploy=true
-    local build=true
-    local build_type="Release"
-    
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -h|--help)
-                show_usage
-                exit 0
-                ;;
-            -t|--target)
-                TARGET_IP="$2"
-                shift 2
-                ;;
-            -u|--user)
-                TARGET_USER="$2"
-                shift 2
-                ;;
-            --transferd-only)
-                build_yolo=false
-                shift
-                ;;
-            --yolo-only)
-                build_transferd=false
-                shift
-                ;;
-            --no-deploy)
-                deploy=false
-                shift
-                ;;
-            --deploy-only)
-                build=false
-                shift
-                ;;
-            --debug)
-                build_type="Debug"
-                shift
-                ;;
-            *)
-                print_error "Unknown option: $1"
-                show_usage
-                exit 1
-                ;;
-        esac
-    done
-    
-    print_status "Starting build and deployment process..."
-    print_status "Target: $TARGET_USER@$TARGET_IP"
-    print_status "Workspace: $WORKSPACE_DIR"
-    print_status "Build type: $build_type"
     echo ""
+    echo "=== Building transferd ==="
+    cd "$BASE_DIR/transferd"
     
-    # Check workspace directory
-    if [ ! -d "$WORKSPACE_DIR" ]; then
-        print_error "Workspace directory not found: $WORKSPACE_DIR"
-        exit 1
+    if [ ! -f "build.sh" ]; then
+        echo "✗ transferd build.sh not found"
+        return 1
     fi
     
-    # Build phase
-    if [ "$build" = true ]; then
-        if [ "$build_transferd" = true ]; then
-            build_transferd
-            echo ""
-        fi
-        
-        if [ "$build_yolo" = true ]; then
-            build_yolo
-            echo ""
-        fi
-    fi
+    ./build.sh Release
     
-    # Deployment phase
-    if [ "$deploy" = true ]; then
-        check_target_connectivity
-        deploy_files
-    fi
-    
-    print_success "Build and deployment completed successfully!"
-    
-    if [ "$deploy" = true ]; then
-        echo ""
-        print_status "You can now start the transferd daemon on the target with:"
-        echo "  ssh $TARGET_USER@$TARGET_IP"
-        echo "  /usr/bin/transferd start"
-        echo ""
-        print_status "Monitor logs with:"
-        echo "  /usr/bin/transferd -d"
+    if [ -f "install/bin/transferd" ]; then
+        echo "✓ transferd built successfully"
+        return 0
+    else
+        echo "✗ transferd build failed"
+        return 1
     fi
 }
 
-# Check if script is being sourced or executed
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
-fi
+# Function to build YOLO
+build_yolo() {
+    echo ""
+    echo "=== Building YOLO ==="
+    cd "$BASE_DIR/yolo"
+    
+    if [ ! -f "build.sh" ]; then
+        echo "✗ YOLO build.sh not found"
+        return 1
+    fi
+    
+    ./build.sh Release
+    
+    if [ -f "install/uclibc/YOLO/YOLO" ]; then
+        echo "✓ YOLO built successfully"
+        return 0
+    else
+        echo "✗ YOLO build failed"
+        return 1
+    fi
+}
+
+# Function to deploy files
+deploy_files() {
+    echo ""
+    echo "=== Deploying files ==="
+    
+    # Deploy transferd
+    echo "Deploying transferd..."
+    if scp "$BASE_DIR/transferd/install/bin/transferd" "$REMOTE_HOST:$REMOTE_PATH/" 2>/dev/null; then
+        echo "✓ transferd deployed"
+    else
+        echo "✗ transferd deployment failed"
+        return 1
+    fi
+    
+    # Deploy YOLO
+    echo "Deploying YOLO"
+    if scp "$BASE_DIR/yolo/install/uclibc/YOLO/YOLO" "$REMOTE_HOST:$REMOTE_PATH/"; then
+        echo "✓ luckfox_pico_rtsp_yolov5 deployed"
+    else
+        echo "✗ luckfox_pico_rtsp_yolov5 deployment failed"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Function to verify deployment
+verify_deployment() {
+    echo ""
+    echo "=== Verifying deployment ==="
+    
+    # Check transferd
+    if ssh $REMOTE_HOST "test -f $REMOTE_PATH/transferd && echo 'transferd found'" 2>/dev/null | grep -q "transferd found"; then
+        echo "✓ transferd verified on target"
+        ssh $REMOTE_HOST "ls -la $REMOTE_PATH/transferd" 2>/dev/null
+    else
+        echo "✗ transferd not found on target"
+        return 1
+    fi
+    
+    # Check YOLO
+    if ssh $REMOTE_HOST "test -f $REMOTE_PATH/YOLO && echo 'yolo found'" 2>/dev/null | grep -q "yolo found"; then
+        echo "✓ luckfox_pico_rtsp_yolov5 verified on target"
+        ssh $REMOTE_HOST "ls -la $REMOTE_PATH/YOLO" 2>/dev/null
+    else
+        echo "✗ luckfox_pico_rtsp_yolov5 not found on target"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Main execution
+main() {
+    # Check SSH first
+    if ! check_ssh; then
+        echo "Aborting: Cannot connect to target device"
+        exit 1
+    fi
+    
+    # Build applications
+    if ! build_transferd; then
+        echo "Aborting: transferd build failed"
+        exit 1
+    fi
+    
+    if ! build_yolo; then
+        echo "Aborting: YOLO build failed"
+        exit 1
+    fi
+    
+    # Deploy files
+    if ! deploy_files; then
+        echo "Aborting: Deployment failed"
+        exit 1
+    fi
+    
+    # Verify deployment
+    if ! verify_deployment; then
+        echo "Warning: Deployment verification failed"
+        exit 1
+    fi
+    
+    echo ""
+    echo "=== Deployment Complete ==="
+    echo "✓ All applications built and deployed successfully!"
+    echo "✓ Files are available at $REMOTE_HOST:$REMOTE_PATH/"
+}
+
+# Run main function
+main "$@"

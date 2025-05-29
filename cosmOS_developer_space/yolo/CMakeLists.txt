@@ -65,8 +65,8 @@ elseif(${LIBC_TYPE} STREQUAL "glibc")
     endif()
 endif()
 
-set(EXAMPLE_NAME "luckfox_pico_rtsp_yolov5")
-set(EXAMPLE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/example/${EXAMPLE_NAME}")
+set(EXAMPLE_NAME "YOLO")
+set(EXAMPLE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/example/luckfox_pico_rtsp_yolov5")
 
 if(DEFINED EXAMPLE_DIR)
     message(STATUS "Selected source directory: ${EXAMPLE_DIR}")
@@ -153,6 +153,33 @@ find_library(SWRESAMPLE_LIBRARY
     NO_DEFAULT_PATH
 )
 
+find_library(Z_LIBRARY 
+    NAMES z
+    PATHS 
+        ${CMAKE_BUILDROOT_SYSROOT}/usr/lib
+        ${CMAKE_BUILDROOT_HOST_SYSROOT}/usr/lib
+        ${CMAKE_SYSROOT}/usr/lib
+    NO_DEFAULT_PATH
+)
+
+find_library(ICONV_LIBRARY 
+    NAMES iconv
+    PATHS 
+        ${CMAKE_BUILDROOT_SYSROOT}/usr/lib
+        ${CMAKE_BUILDROOT_HOST_SYSROOT}/usr/lib
+        ${CMAKE_SYSROOT}/usr/lib
+    NO_DEFAULT_PATH
+)
+
+find_library(DRM_LIBRARY 
+    NAMES drm
+    PATHS 
+        ${CMAKE_BUILDROOT_SYSROOT}/usr/lib
+        ${CMAKE_BUILDROOT_HOST_SYSROOT}/usr/lib
+        ${CMAKE_SYSROOT}/usr/lib
+    NO_DEFAULT_PATH
+)
+
 if(AVCODEC_LIBRARY AND AVFORMAT_LIBRARY AND AVUTIL_LIBRARY)
     message(STATUS "FFmpeg libraries found:")
     message(STATUS "  avcodec: ${AVCODEC_LIBRARY}")
@@ -186,7 +213,7 @@ add_compile_options(-g -Wall
                     -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 
                     )
 
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath-link,${CMAKE_CURRENT_SOURCE_DIR}/lib:/usr/lib")
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath-link,${CMAKE_CURRENT_SOURCE_DIR}/lib:/usr/lib -s")
 
 if(${LIBC_TYPE} STREQUAL "uclibc")
     target_link_libraries(${PROJECT_NAME}
@@ -214,6 +241,26 @@ if(${LIBC_TYPE} STREQUAL "uclibc")
         if(SWRESAMPLE_LIBRARY)
             target_link_libraries(${PROJECT_NAME} ${SWRESAMPLE_LIBRARY})
         endif()
+
+        # Add FFmpeg dependencies
+        if(Z_LIBRARY)
+            target_link_libraries(${PROJECT_NAME} ${Z_LIBRARY})
+        else()
+            target_link_libraries(${PROJECT_NAME} z)  # Try system z
+        endif()
+        
+        if(ICONV_LIBRARY)
+            target_link_libraries(${PROJECT_NAME} ${ICONV_LIBRARY})
+        else()
+            target_link_libraries(${PROJECT_NAME} iconv)  # Try system iconv
+        endif()
+        
+        if(DRM_LIBRARY)
+            target_link_libraries(${PROJECT_NAME} ${DRM_LIBRARY})
+        else()
+            target_link_libraries(${PROJECT_NAME} drm)  # Try system drm
+        endif()
+
     endif()
 endif()
 
@@ -239,7 +286,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 message(STATUS "model dir PATH: ${EXAMPLE_DIR}/model")
 
-set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/install/${LIBC_TYPE}/${PROJECT_NAME}_demo")
+set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/install/${LIBC_TYPE}/${PROJECT_NAME}")
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX})
 SET(MODEL_DIR "${EXAMPLE_DIR}/model")
 file(GLOB MODEL_FILES "${MODEL_DIR}/*")  

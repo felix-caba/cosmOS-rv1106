@@ -3,8 +3,6 @@
         "*.css": "css",
         "css": "css",
         "*.mm": "objective-cpp",
-        "transferd.h": "c",
-        "inet.h": "c"
-    },
-    "cmake.sourceDirectory": "/home/felix/docker-shared/cosmOS-rv1106/cosmOS_developer_space/yolo"
+        "ifaddrs.h": "c"
+    }
 }

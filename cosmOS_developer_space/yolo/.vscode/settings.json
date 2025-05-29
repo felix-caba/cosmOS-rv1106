@@ -1,0 +1,9 @@
+{
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "files.associations": {
+        "*.css": "css",
+        "css": "css",
+        "*.mm": "objective-cpp",
+        "vector": "cpp"
+    }
+}

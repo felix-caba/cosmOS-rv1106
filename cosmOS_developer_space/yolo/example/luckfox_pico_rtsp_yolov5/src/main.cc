@@ -12,17 +12,21 @@
 #include <time.h>
 #include <unistd.h>
 #include <vector>
-
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-
+#include <sys/stat.h>
 #include "rtsp_demo.h"
 #include "luckfox_mpi.h"
 #include "yolov5.h"
 
+// #include <libavcodec/avcodec.h>
+// #include <libavformat/avformat.h>
+// #include <libswscale/swscale.h>
+// #include <libavutil/imgutils.h>
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+
+#define YOLO_LOG_FILE "/tmp/yolo_log.txt"
 
 #define DISP_WIDTH 720
 #define DISP_HEIGHT 480
@@ -37,6 +41,9 @@ int model_height = 640;
 float scale;
 int leftPadding;
 int topPadding;
+
+static int jpeg_pipe_fd = -1;
+static bool jpeg_streaming_initialized = false;
 
 cv::Mat letterbox(cv::Mat input)
 {
@@ -68,9 +75,61 @@ void mapCoordinates(int *x, int *y)
 	*y = (int)((float)my / scale);
 }
 
+void log_error(const char *message)
+{
+	FILE *log_file = fopen(YOLO_LOG_FILE, "a");
+	if (log_file)
+	{
+		fprintf(log_file, "%s\n", message);
+		fclose(log_file);
+	}
+	else
+	{
+		fprintf(stderr, "Failed to open log file: %s\n", strerror(errno));
+	}
+}
+
+bool init_jpeg_streaming()
+{
+    printf("Creating JPEG pipe...\n");
+    log_error("Creating JPEG pipe...");
+    
+    if (mkfifo("/tmp/jpeg_stream", 0666) == -1 && errno != EEXIST)
+    {
+        char error_msg[256];
+        snprintf(error_msg, sizeof(error_msg), "Failed to create JPEG pipe: %s", strerror(errno));
+        log_error(error_msg);
+        printf("ERROR: %s\n", error_msg);
+        return false;
+    }
+
+    printf("JPEG pipe created successfully\n");
+    log_error("JPEG pipe created successfully");
+
+    jpeg_pipe_fd = -1; 
+    jpeg_streaming_initialized = true;
+    
+    printf("JPEG streaming initialized (pipe ready for connection)\n");
+    log_error("JPEG streaming initialized successfully");
+    return true;
+}
+
 int main(int argc, char *argv[])
 {
-	system("RkLunch-stop.sh");
+	// create log file
+
+	FILE *log_file = fopen(YOLO_LOG_FILE, "w");
+	if (log_file)
+	{
+		fprintf(log_file, "YOLOv5 RTSP Server Log\n");
+		fclose(log_file);
+	}
+	else
+	{
+		fprintf(stderr, "Failed to create log file: %s\n", strerror(errno));
+		return -1;
+	}
+
 	int16_t detection_output_fd = -1;
 
 	for (int i = 1; i < argc; ++i)
@@ -89,6 +148,11 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+
+	if (!init_jpeg_streaming()) {
+        log_error("Failed to initialize JPEG streaming");
+        printf("Warning: JPEG streaming not available\n");
+    }
 
 	RK_S32 s32Ret = 0;
 	int sX, sY, eX, eY;
@@ -151,6 +215,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	/*
 	// rtsp init
 	rtsp_demo_handle g_rtsplive = NULL;
 	rtsp_session_handle g_rtsp_session;
@@ -158,6 +223,7 @@ int main(int argc, char *argv[])
 	// g_rtsp_session = rtsp_new_session(g_rtsplive, "/live/0");
 	rtsp_set_video(g_rtsp_session, RTSP_CODEC_ID_VIDEO_H264, NULL, 0);
 	rtsp_sync_video_ts(g_rtsp_session, rtsp_get_reltime(), rtsp_get_ntptime());
+	*/
 
 	// vi init
 	vi_dev_init();
@@ -182,7 +248,7 @@ int main(int argc, char *argv[])
 			cv::Mat yuv420sp(height + height / 2, width, CV_8UC1, vi_data);
 			cv::Mat bgr(height, width, CV_8UC3, data);
 
-			cv::cvtColor(yuv420sp, bgr, cv::COLOR_YUV420sp2BGR);
+			cv::cvtColor(yuv420sp, bgr, cv::COLOR_YUV420sp2RGB);
 			cv::resize(bgr, frame, cv::Size(width, height), 0, 0, cv::INTER_LINEAR);
 
 			// letterbox
@@ -244,32 +310,69 @@ int main(int argc, char *argv[])
 		}
 		memcpy(data, frame.data, width * height * 3);
 
-		// encode H264
-		RK_MPI_VENC_SendFrame(0, &h264_frame, -1);
+		if (jpeg_streaming_initialized)
+        {
+            
+            std::vector<uchar> jpeg_buffer;
+            std::vector<int> jpeg_params = {
+                cv::IMWRITE_JPEG_QUALITY, 100,   
+            };
+            
+            if (cv::imencode(".jpg", frame, jpeg_buffer, jpeg_params))
+            {
+            
+                if (jpeg_pipe_fd < 0)
+                {
+                    jpeg_pipe_fd = open("/tmp/jpeg_stream", O_WRONLY | O_NONBLOCK);
+                    if (jpeg_pipe_fd >= 0)
+                    {
+                        printf("JPEG pipe opened successfully for writing\n");
+                        int pipe_size = 1048576; 
+                        fcntl(jpeg_pipe_fd, F_SETPIPE_SZ, pipe_size);
+                    }
+                }
 
-		s32Ret = RK_MPI_VENC_GetStream(0, &stFrame, -1);
-		if (s32Ret == RK_SUCCESS)
-		{
-			void *pData = RK_MPI_MB_Handle2VirAddr(stFrame.pstPack->pMbBlk);
-		}
-
-		static int web_frame_counter = 0;
-		if (++web_frame_counter % 2 == 0)
-		{ // Every 2nd frame instead of 3rd = faster updates
-			std::vector<uchar> buffer;
-			cv::imencode(".jpg", frame, buffer, std::vector<int>{
-													cv::IMWRITE_JPEG_QUALITY, 40, // Lower quality = faster encoding
-												});
-
-			// Atomic write to prevent torn reads
-			FILE *jpg = fopen("/tmp/frame_new.jpg", "wb");
-			if (jpg)
-			{
-				fwrite(buffer.data(), 1, buffer.size(), jpg);
-				fclose(jpg);
-				rename("/tmp/frame_new.jpg", "/tmp/frame.jpg"); // Atomic replace
-			}
-		}
+                if (jpeg_pipe_fd >= 0)
+                {
+                    uint32_t jpeg_size = jpeg_buffer.size();
+                    ssize_t written = write(jpeg_pipe_fd, &jpeg_size, sizeof(jpeg_size));
+                    if (written == sizeof(jpeg_size))
+                    {
+                        written = write(jpeg_pipe_fd, jpeg_buffer.data(), jpeg_size);
+                        if (written == (ssize_t)jpeg_size)
+                        {
+                            static int frame_count = 0;
+                            if (++frame_count % 30 == 0)
+                            {
+                                printf("Successfully streamed JPEG frame %d (%u bytes)\n", frame_count, jpeg_size);
+                            }
+                        }
+                        else if (written == -1)
+                        {
+                            if (errno == EPIPE)
+                            {
+                                close(jpeg_pipe_fd);
+                                jpeg_pipe_fd = -1;
+                                printf("JPEG pipe closed by reader\n");
+                            }
+                            else if (errno != EAGAIN && errno != EWOULDBLOCK)
+                            {
+                                printf("JPEG write error: %s\n", strerror(errno));
+                            }
+                        }
+                        else
+                        {
+                            printf("Partial JPEG write: %zd/%u bytes\n", written, jpeg_size);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                printf("Failed to encode JPEG\n");
+            }
+        }
+    
 
 		// release frame
 		s32Ret = RK_MPI_VI_ReleaseChnFrame(0, 0, &stViFrame);
@@ -277,11 +380,14 @@ int main(int argc, char *argv[])
 		{
 			RK_LOGE("RK_MPI_VI_ReleaseChnFrame fail %x", s32Ret);
 		}
+		
+		/*
 		s32Ret = RK_MPI_VENC_ReleaseStream(0, &stFrame);
 		if (s32Ret != RK_SUCCESS)
 		{
 			RK_LOGE("RK_MPI_VENC_ReleaseStream fail %x", s32Ret);
 		}
+			*/
 		memset(text, 0, 8);
 	}
 
@@ -300,14 +406,23 @@ int main(int argc, char *argv[])
 
 	free(stFrame.pstPack);
 
+	/*
 	if (g_rtsplive)
 		rtsp_del_demo(g_rtsplive);
-
+	*/
 	RK_MPI_SYS_Exit();
 
 	// Release rknn model
 	release_yolov5_model(&rknn_app_ctx);
 	deinit_post_process();
+
+	 if (jpeg_pipe_fd >= 0)
+    {
+        close(jpeg_pipe_fd);
+        unlink("/tmp/jpeg_stream");
+    }
+
+
 
 	return 0;
 }
