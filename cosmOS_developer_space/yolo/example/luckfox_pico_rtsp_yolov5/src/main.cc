@@ -13,6 +13,9 @@
 #include <unistd.h>
 #include <vector>
 
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+
 #include "rtsp_demo.h"
 #include "luckfox_mpi.h"
 #include "yolov5.h"
@@ -151,8 +154,8 @@ int main(int argc, char *argv[])
 	// rtsp init
 	rtsp_demo_handle g_rtsplive = NULL;
 	rtsp_session_handle g_rtsp_session;
-	g_rtsplive = create_rtsp_demo(554);
-	g_rtsp_session = rtsp_new_session(g_rtsplive, "/live/0");
+	// g_rtsplive = create_rtsp_demo(554);
+	// g_rtsp_session = rtsp_new_session(g_rtsplive, "/live/0");
 	rtsp_set_video(g_rtsp_session, RTSP_CODEC_ID_VIDEO_H264, NULL, 0);
 	rtsp_sync_video_ts(g_rtsp_session, rtsp_get_reltime(), rtsp_get_ntptime());
 
@@ -204,7 +207,7 @@ int main(int argc, char *argv[])
 					{ // Only if FD is valid
 						char detection_line_buffer[256];
 						int len = snprintf(detection_line_buffer, sizeof(detection_line_buffer),
-                  		"%s\n", coco_cls_to_name(det_result->cls_id));
+										   "%s\n", coco_cls_to_name(det_result->cls_id));
 
 						if (len > 0 && len < (int)sizeof(detection_line_buffer))
 						{
@@ -212,7 +215,7 @@ int main(int argc, char *argv[])
 							if (written_bytes == -1)
 							{
 								fprintf(stderr, "YOLO: Error writing to detection_output_fd (FD: %d). Return value: %zd, errno: %d (%s)\n",
-                                        detection_output_fd, written_bytes, errno, strerror(errno));
+										detection_output_fd, written_bytes, errno, strerror(errno));
 							}
 							else if (written_bytes < len)
 							{
@@ -244,17 +247,27 @@ int main(int argc, char *argv[])
 		// encode H264
 		RK_MPI_VENC_SendFrame(0, &h264_frame, -1);
 
-		// rtsp
 		s32Ret = RK_MPI_VENC_GetStream(0, &stFrame, -1);
 		if (s32Ret == RK_SUCCESS)
 		{
-			if (g_rtsplive && g_rtsp_session)
+			void *pData = RK_MPI_MB_Handle2VirAddr(stFrame.pstPack->pMbBlk);
+		}
+
+		static int web_frame_counter = 0;
+		if (++web_frame_counter % 2 == 0)
+		{ // Every 2nd frame instead of 3rd = faster updates
+			std::vector<uchar> buffer;
+			cv::imencode(".jpg", frame, buffer, std::vector<int>{
+													cv::IMWRITE_JPEG_QUALITY, 40, // Lower quality = faster encoding
+												});
+
+			// Atomic write to prevent torn reads
+			FILE *jpg = fopen("/tmp/frame_new.jpg", "wb");
+			if (jpg)
 			{
-				// printf("len = %d PTS = %d \n",stFrame.pstPack->u32Len, stFrame.pstPack->u64PTS);
-				void *pData = RK_MPI_MB_Handle2VirAddr(stFrame.pstPack->pMbBlk);
-				rtsp_tx_video(g_rtsp_session, (uint8_t *)pData, stFrame.pstPack->u32Len,
-							  stFrame.pstPack->u64PTS);
-				rtsp_do_event(g_rtsplive);
+				fwrite(buffer.data(), 1, buffer.size(), jpg);
+				fclose(jpg);
+				rename("/tmp/frame_new.jpg", "/tmp/frame.jpg"); // Atomic replace
 			}
 		}
 

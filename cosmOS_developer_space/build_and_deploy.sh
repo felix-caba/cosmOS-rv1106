@@ -2,12 +2,12 @@
 
 # Build and Deploy Script for transferd and YOLO
 # Author: felix@cosmOS
-# Description: Compiles both transferd and YOLO, then deploys to target device
+# Description: Compiles both transferd and YOLO using CMake, then deploys to target device
 
 set -e  # Exit on any error
 
 # Configuration
-TARGET_IP="192.168.1.161"
+TARGET_IP="192.168.1.164"
 TARGET_USER="root"
 TARGET_BIN_DIR="/usr/bin"
 WORKSPACE_DIR="/home/felix/docker-shared/cosmOS-rv1106/cosmOS_developer_space"
@@ -47,34 +47,47 @@ check_target_connectivity() {
 }
 
 build_transferd() {
-    print_status "Building transferd..."
+    print_status "Building transferd with CMake..."
     cd "$WORKSPACE_DIR/transferd"
     
-    if [ -f "Makefile" ]; then
-        make clean
+    # Clean previous build
+    if [ -d "build" ]; then
+        rm -rf build
         print_status "Cleaned previous transferd build"
-    else
-        print_error "Makefile not found in transferd directory"
-        exit 1
     fi
     
-    # Set TOOLCHAIN_BASE_NAME for uclibc build
-    export TOOLCHAIN_BASE_NAME="arm-rockchip830-linux-uclibcgnueabihf"
-
-    make all
+    if [ -d "install" ]; then
+        rm -rf install
+        print_status "Cleaned previous transferd install"
+    fi
     
-    if [ -f "transferd" ]; then
+    # Create build directory and configure
+    mkdir -p build
+    cd build
+    
+    print_status "Configuring transferd with CMake..."
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+    
+    print_status "Compiling transferd..."
+    make -j$(nproc)
+    
+    print_status "Installing transferd..."
+    make install
+    
+    # Check if executable was created
+    TRANSFERD_EXECUTABLE="$WORKSPACE_DIR/transferd/install/bin/transferd"
+    if [ -f "$TRANSFERD_EXECUTABLE" ]; then
         print_success "transferd compiled successfully"
-        ls -la transferd
+        ls -la "$TRANSFERD_EXECUTABLE"
+        file "$TRANSFERD_EXECUTABLE"
     else
-        print_error "transferd compilation failed"
+        print_error "transferd compilation failed - executable not found at $TRANSFERD_EXECUTABLE"
         exit 1
     fi
 }
 
-
 build_yolo() {
-    print_status "Building YOLO..."
+    print_status "Building YOLO with CMake..."
     cd "$WORKSPACE_DIR/yolo"
     
     # Clean previous build
@@ -88,33 +101,37 @@ build_yolo() {
         print_status "Cleaned previous YOLO install"
     fi
     
-    # Build YOLO using build.sh
-    if [ -f "build.sh" ]; then
-        chmod +x build.sh
-        ./build.sh
-        
-        # Check if YOLO executable was created
-        YOLO_EXECUTABLE="$WORKSPACE_DIR/yolo/install/uclibc/luckfox_pico_rtsp_yolov5_demo/luckfox_pico_rtsp_yolov5"
-        if [ -f "$YOLO_EXECUTABLE" ]; then
-            print_success "YOLO compiled successfully"
-            ls -la "$YOLO_EXECUTABLE"
-        else
-            print_error "YOLO compilation failed - executable not found at $YOLO_EXECUTABLE"
-            print_status "Checking install directory contents:"
-            find "$WORKSPACE_DIR/yolo/install" -name "*yolo*" -o -name "*luckfox*" 2>/dev/null || true
-            exit 1
-        fi
+    # Create build directory and configure
+    mkdir -p build
+    cd build
+    
+    print_status "Configuring YOLO with CMake..."
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+    
+    print_status "Compiling YOLO..."
+    make -j$(nproc)
+    
+    print_status "Installing YOLO..."
+    make install
+    
+    # Check if YOLO executable was created
+    YOLO_EXECUTABLE="$WORKSPACE_DIR/yolo/install/uclibc/luckfox_pico_rtsp_yolov5_demo/luckfox_pico_rtsp_yolov5"
+    if [ -f "$YOLO_EXECUTABLE" ]; then
+        print_success "YOLO compiled successfully"
+        ls -la "$YOLO_EXECUTABLE"
+        file "$YOLO_EXECUTABLE"
     else
-        print_error "build.sh not found in YOLO directory"
+        print_error "YOLO compilation failed - executable not found at $YOLO_EXECUTABLE"
+        print_status "Checking install directory contents:"
+        find "$WORKSPACE_DIR/yolo/install" -name "*yolo*" -o -name "*luckfox*" 2>/dev/null || true
         exit 1
     fi
 }
 
-
 deploy_files() {
     print_status "Deploying files to target device..."
     
-    TRANSFERD_BINARY="$WORKSPACE_DIR/transferd/transferd"
+    TRANSFERD_BINARY="$WORKSPACE_DIR/transferd/install/bin/transferd"
     YOLO_BINARY="$WORKSPACE_DIR/yolo/install/uclibc/luckfox_pico_rtsp_yolov5_demo/luckfox_pico_rtsp_yolov5"
     
     # Check if binaries exist
@@ -166,6 +183,9 @@ deploy_files() {
         echo 'Deployed binaries:'
         ls -la $TARGET_BIN_DIR/transferd $TARGET_BIN_DIR/YOLO 2>/dev/null || echo 'Some binaries not found'
         echo ''
+        echo 'Binary information:'
+        file $TARGET_BIN_DIR/transferd $TARGET_BIN_DIR/YOLO 2>/dev/null || true
+        echo ''
         echo 'Available disk space:'
         df -h $TARGET_BIN_DIR
     "
@@ -181,6 +201,7 @@ show_usage() {
     echo "  --yolo-only         Build and deploy only YOLO"
     echo "  --no-deploy         Build only, skip deployment"
     echo "  --deploy-only       Deploy only, skip building"
+    echo "  --debug             Build with debug symbols (default: Release)"
 }
 
 main() {
@@ -188,8 +209,8 @@ main() {
     local build_yolo=true
     local deploy=true
     local build=true
+    local build_type="Release"
     
- 
     while [[ $# -gt 0 ]]; do
         case $1 in
             -h|--help)
@@ -220,6 +241,10 @@ main() {
                 build=false
                 shift
                 ;;
+            --debug)
+                build_type="Debug"
+                shift
+                ;;
             *)
                 print_error "Unknown option: $1"
                 show_usage
@@ -231,6 +256,7 @@ main() {
     print_status "Starting build and deployment process..."
     print_status "Target: $TARGET_USER@$TARGET_IP"
     print_status "Workspace: $WORKSPACE_DIR"
+    print_status "Build type: $build_type"
     echo ""
     
     # Check workspace directory
