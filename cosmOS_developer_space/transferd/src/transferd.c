@@ -12,7 +12,6 @@
 #include <sys/wait.h>
 #include <errno.h>
 
-
 transferd_config_t current_config;
 static int yolo_pipe_read_fd = -1;
 static pid_t yolo_pid = -1;
@@ -26,7 +25,7 @@ void usage()
     printf("  stop    Stop the transfer daemon\n");
     printf("  status  Show the status of the transfer daemon\n");
     printf("Options:\n");
-    printf("  -l + <type> + <option>,   Manage logs (TRANSFERD, YOLO, API) with options (delete, view)\n");
+    printf("  -l + <type> + <option>,   Manage logs (trans, yolo, api) with options (delete, view)\n");
     printf("  -o + <type>,   Specify the transfer output (HTTPS, SCREEN)\n");
     printf("  -s + <type>,   Specify the source type (YOLO, GPIO)\n");
     printf("  -c,   Show configuration options\n");
@@ -89,8 +88,8 @@ int transferd_loop()
 
         if (yolo_pid == -1) // SI no esta CORRIENDO EL yolamen
         {
-            log_error("Not running, creating PID: %d", yolo_pid);
-            int detection_pipe_fds[2]; 
+            log_message("Not running, creating PID: %d", LOG_FILE, yolo_pid);
+            int detection_pipe_fds[2];
 
             if (pipe(detection_pipe_fds) == -1)
             { // If pipe fails, return.
@@ -108,42 +107,47 @@ int transferd_loop()
                 return;
             }
             else if (yolo_pid == 0) // CHILD
-            { 
+            {
 
                 log_message("Yolo Child from PID", LOG_FILE);
-                const char *yolo_executable_dir = "/usr/bin"; 
+                const char *yolo_executable_dir = "/usr/bin";
 
                 close(detection_pipe_fds[0]); // i closed the reader for the child. only writer.
 
-                int dev_null_fd = open("/dev/null", O_WRONLY); 
+                int dev_null_fd = open("/dev/null", O_WRONLY);
 
-                    if (dev_null_fd != -1) {
-                    if (dup2(dev_null_fd, STDOUT_FILENO) < 0) {
+                if (dev_null_fd != -1)
+                {
+                    if (dup2(dev_null_fd, STDOUT_FILENO) < 0)
+                    {
                         log_message("TRANSFERD_LOOP: Child: Failed to redirect stdout to /dev/null: %s", LOG_FILE, strerror(errno));
                     }
-                
-                    if (dev_null_fd > STDERR_FILENO) {
+
+                    if (dev_null_fd > STDERR_FILENO)
+                    {
                         close(dev_null_fd);
                     }
-                } else {
+                }
+                else
+                {
                     log_message("TRANSFERD_LOOP: Child: Failed to open /dev/null for YOLO output redirection: %s", LOG_FILE, strerror(errno));
                 }
 
                 char detection_fd_str[16];
                 snprintf(detection_fd_str, sizeof(detection_fd_str), "%d", detection_pipe_fds[1]);
-                
 
                 char *const yolo_argv[] = {
-                    "YOLO",                      // argv[0]
-                    "--detection-fd",            // argv[1]
-                    detection_fd_str,            // argv[2]
-                    NULL                         // null end
+                    "YOLO",           // argv[0]
+                    "--detection-fd", // argv[1]
+                    detection_fd_str, // argv[2]
+                    NULL              // null end
                 };
 
-                 if (chdir(yolo_executable_dir) != 0) {
+                if (chdir(yolo_executable_dir) != 0)
+                {
                     log_message("TRANSFERD_LOOP: Child: Failed to change directory to YOLO executable directory: %s", LOG_FILE, strerror(errno));
                     close(detection_pipe_fds[1]);
-                    _exit(127); 
+                    _exit(127);
                 }
 
                 execvp("YOLO", yolo_argv); // Aqui se termina to
@@ -152,7 +156,7 @@ int transferd_loop()
                 _exit(EXIT_FAILURE);
             }
             else // PARENT
-            {                                             
+            {
                 close(detection_pipe_fds[1]);              // i closed the writer for the parent. only reader.
                 yolo_pipe_read_fd = detection_pipe_fds[0]; // save the read end of the pipe
                 log_message("TRANSFERD_LOOP: YOLO process started with PID. Father process. %d", LOG_FILE, yolo_pid);
@@ -183,14 +187,15 @@ int transferd_loop()
                 char *line = strtok(detection_buffer, "\n");
                 while (line != NULL)
                 {
-                    log_message("YOLO_DETECTION_DATA: %s", line);
                     
-                    update_detection(line); 
+                    log_message("YOLO_DETECTION_DATA: %s", LOG_FILE, line);
+
+                    update_detection(line);
 
                     line = strtok(NULL, "\n");
                 }
             }
-               else if (bytes_read == 0)
+            else if (bytes_read == 0)
             { // EOF on detection_pipe
                 log_message("TRANSFERD_LOOP: YOLO process (PID %d) closed custom detection pipe (EOF).", LOG_FILE, yolo_pid);
                 close(yolo_pipe_read_fd);
@@ -198,31 +203,38 @@ int transferd_loop()
 
                 int status;
                 pid_t result = waitpid(yolo_pid, &status, WNOHANG);
-                
-                if (result == yolo_pid) { 
+
+                if (result == yolo_pid)
+                {
                     // yolo a la mierda
                     log_message("TRANSFERD_LOOP: YOLO process (PID %d) confirmed exited with status %d.", LOG_FILE, yolo_pid, status);
                     yolo_pid = -1; // Allow restart
-                } 
-                else if (result == 0) { 
-                    // 
+                }
+                else if (result == 0)
+                {
+                    //
                     log_message("TRANSFERD_LOOP: YOLO (PID %d) is still running but pipe closed unexpectedly. Terminating for clean restart.", LOG_FILE, yolo_pid);
-                    
+
                     // limpieza
-                    if (kill(yolo_pid, SIGTERM) == 0) {
+                    if (kill(yolo_pid, SIGTERM) == 0)
+                    {
                         usleep(200000); // 200ms
                         result = waitpid(yolo_pid, &status, WNOHANG);
-                        if (result == yolo_pid) {
+                        if (result == yolo_pid)
+                        {
                             log_message("TRANSFERD_LOOP: YOLO (PID %d) terminated gracefully.", LOG_FILE, yolo_pid);
-                        } else if (result == 0) {
+                        }
+                        else if (result == 0)
+                        {
                             log_message("TRANSFERD_LOOP: YOLO (PID %d) didn't respond to SIGTERM. Using SIGKILL.", LOG_FILE, yolo_pid);
                             kill(yolo_pid, SIGKILL);
                             waitpid(yolo_pid, &status, 0);
                         }
                     }
                     yolo_pid = -1; // restart
-                } 
-                else { // waitpid error
+                }
+                else
+                { // waitpid error
                     log_message("TRANSFERD_LOOP: waitpid failed for YOLO process (PID %d): %s", LOG_FILE, yolo_pid, strerror(errno));
                     yolo_pid = -1;
                 }
@@ -252,7 +264,6 @@ int transferd_loop()
     }
 
     return 0;
-
 }
 
 int transferd_logic_init()
@@ -268,20 +279,20 @@ int transferd_logic_init()
         return -1;
     }
 
-    if (current_config.output_type == OUTPUT_TYPE_HTTP) {
-        if (start_http_server() != 0) {
-        log_message("TRANSFERD: Failed to start HTTP server. Exiting.", LOG_FILE);
-        return -1;
+     log_message("TRANSFERDXD: Initializing transfer logic...", LOG_FILE);
+    if (current_config.output_type == OUTPUT_TYPE_HTTP)
+    {
+        if (start_http_server() != 0)
+        {
+            log_message("TRANSFERD: Failed to start HTTP server. Exiting.", LOG_FILE);
+            return -1;
         }
     }
-    
-
+     log_message("TRANSFERD:xxxxxxx Initializing transfer logic...", LOG_FILE);
     log_message("TRANSFERD: Configuration loaded successfully. Source: %s",
                 source_type_to_string(current_config.source_type), LOG_FILE);
     return 0;
 }
-
-
 
 int main(int argc, char *argv[])
 {
@@ -323,8 +334,7 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-
-        if (strcmp(argv[2], "TRANSFERD") == 0)
+        if (strcmp(argv[2], "trans") == 0)
         {
             if (strcmp(argv[3], "delete") == 0)
             {
@@ -341,7 +351,7 @@ int main(int argc, char *argv[])
                 printf("Invalid option for TRANSFERD log. Use 'delete' or 'view'.\n");
             }
         }
-        else if (strcmp(argv[2], "YOLO") == 0)
+        else if (strcmp(argv[2], "yolo") == 0)
         {
             if (strcmp(argv[3], "delete") == 0)
             {
@@ -358,7 +368,7 @@ int main(int argc, char *argv[])
                 printf("Invalid option for YOLO log. Use 'delete' or 'view'.\n");
             }
         }
-        else if (strcmp(argv[2], "API") == 0)
+        else if (strcmp(argv[2], "api") == 0)
         {
             if (strcmp(argv[3], "delete") == 0)
             {
@@ -380,8 +390,6 @@ int main(int argc, char *argv[])
             printf("Invalid log type. Use 'TRANSFERD', 'YOLO', or 'API'.\n");
         }
         return 0;
-            
-
     }
     else if (strcmp(argv[1], "-o") == 0)
     {
@@ -390,7 +398,7 @@ int main(int argc, char *argv[])
             printf("Please specify the output type (HTTP or SCREEN).\n");
             return 1;
         }
-        
+
         // Cargar configuración actual primero
         if (load_config_from_file(&current_config) != 0)
         {
@@ -398,7 +406,7 @@ int main(int argc, char *argv[])
             current_config.source_type = SOURCE_TYPE_YOLO;
             current_config.output_type = OUTPUT_TYPE_HTTP;
         }
-        
+
         if (strcmp(argv[2], "HTTP") == 0)
         {
             printf("Output type set to HTTP. Restart daemon for changes\n");
@@ -428,7 +436,6 @@ int main(int argc, char *argv[])
     {
         printf("Current configuration:\n");
         system("cat /etc/transferd.conf");
-
     }
     else if (strcmp(argv[1], "-h") == 0)
     {
@@ -449,13 +456,13 @@ int main(int argc, char *argv[])
             printf("Please specify the source type (YOLO or GPIO).\n");
             return 1;
         }
-        
+
         if (load_config_from_file(&current_config) != 0)
         {
             current_config.source_type = SOURCE_TYPE_YOLO;
             current_config.output_type = OUTPUT_TYPE_HTTP;
         }
-        
+
         if (strcmp(argv[2], "YOLO") == 0)
         {
             printf("Source type set to YOLO. Restart daemon for changes\n");

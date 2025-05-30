@@ -60,3 +60,5 @@ sysdrv/tools/board/dosfstools/dosfstools-4.2
 .BoardConfig.mk
 cosmOS_developer_space/transferd/transferd
 cosmOS_developer_space/transferd/install/bin/transferd
+cosmOS_developer_space/yolo/install/uclibc/YOLO/YOLO
+cosmOS_developer_space/transferd/install/bin/transferd

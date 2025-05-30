@@ -96,129 +96,113 @@ static void handle_mjpeg_stream(int client_fd)
         "Access-Control-Allow-Origin: *\r\n"
         "Connection: keep-alive\r\n\r\n";
 
-    if (send(client_fd, header, strlen(header), 0) <= 0)
+    if (send(client_fd, header, strlen(header), MSG_NOSIGNAL) <= 0)
     {
         printf("Failed to send MJPEG header\n");
         return;
     }
 
-    struct stat pipe_stat;
-    if (stat("/tmp/jpeg_stream", &pipe_stat) != 0)
+    uint32_t frame_count = 0;
+    int consecutive_failures = 0;
+    const int MAX_FAILURES = 50; // More tolerance for missing files
+
+    // Stream at 15 FPS for ultra-low latency (66ms intervals)
+    while (server_running && consecutive_failures < MAX_FAILURES)
     {
-        
-        return;
-    }
-
-    // Open pipe for reading
-    printf("Opening JPEG pipe for reading...\n");
-    int jpeg_fd = open("/tmp/jpeg_stream", O_RDONLY | O_NONBLOCK);
-    if (jpeg_fd < 0)
-    {
-        printf("Failed to open JPEG stream pipe: %s\n", strerror(errno));
-        return;
-    }
-
-    printf("JPEG pipe opened successfully (fd: %d)\n", jpeg_fd);
-
-    uint32_t jpeg_size;
-    int frame_count = 0;
-    char *jpeg_data = NULL;
-    size_t max_frame_size = 1048576; // 1MB max frame size
-
-    while (server_running)
-    {
-        // Read JPEG size first
-        ssize_t bytes_read = read(jpeg_fd, &jpeg_size, sizeof(jpeg_size));
-
-        if (bytes_read == sizeof(jpeg_size))
+        FILE *jpg = fopen("/tmp/frame.jpg", "rb");
+        if (jpg)
         {
-            // Validate frame size
-            if (jpeg_size > 0 && jpeg_size <= max_frame_size)
+            // Get file size
+            fseek(jpg, 0, SEEK_END);
+            long jpg_size = ftell(jpg);
+
+            if (jpg_size > 0 && jpg_size < 1048576) // Max 1MB safety
             {
-                // Allocate or reallocate buffer if needed
-                if (jpeg_data == NULL || jpeg_size > max_frame_size)
-                {
-                    free(jpeg_data);
-                    jpeg_data = malloc(jpeg_size);
-                    if (!jpeg_data)
-                    {
-                        printf("Failed to allocate memory for JPEG data (%u bytes)\n", jpeg_size);
-                        break;
-                    }
-                }
+                fseek(jpg, 0, SEEK_SET);
 
-                // Read JPEG data
-                bytes_read = read(jpeg_fd, jpeg_data, jpeg_size);
-                if (bytes_read == (ssize_t)jpeg_size)
+                // Allocate buffer for the image
+                char *img_buffer = malloc(jpg_size);
+                if (img_buffer)
                 {
-                    // Send frame boundary
-                    char boundary[256];
-                    int boundary_len = snprintf(boundary, sizeof(boundary),
-                                                "\r\n--frame\r\n"
-                                                "Content-Type: image/jpeg\r\n"
-                                                "Content-Length: %u\r\n\r\n",
-                                                jpeg_size);
-
-                    // Send boundary and JPEG data
-                    if (send(client_fd, boundary, boundary_len, MSG_NOSIGNAL) <= 0 ||
-                        send(client_fd, jpeg_data, jpeg_size, MSG_NOSIGNAL) <= 0)
+                    size_t bytes_read = fread(img_buffer, 1, jpg_size, jpg);
+                    if (bytes_read == jpg_size)
                     {
-                        printf("Client disconnected during frame transmission\n");
-                        break;
+                        // Send boundary header
+                        char frame_header[256];
+                        int header_len = snprintf(frame_header, sizeof(frame_header),
+                                                  "\r\n--frame\r\n"
+                                                  "Content-Type: image/jpeg\r\n"
+                                                  "Content-Length: %ld\r\n\r\n",
+                                                  jpg_size);
+
+                        // Send header + image atomically using writev (fastest method)
+                        struct iovec iov[2] = {
+                            {.iov_base = frame_header, .iov_len = header_len},
+                            {.iov_base = img_buffer, .iov_len = jpg_size}};
+
+                        ssize_t sent = writev(client_fd, iov, 2);
+                        if (sent == (header_len + jpg_size))
+                        {
+                            frame_count++;
+                            consecutive_failures = 0;
+
+                            // Log progress every 30 frames
+                            if (frame_count % 30 == 0)
+                            {
+                                printf("Streamed frame %u (%ld bytes) - 15fps mode\n", frame_count, jpg_size);
+                            }
+                        }
+                        else
+                        {
+                            printf("Client disconnected (sent %zd/%ld bytes)\n", sent, header_len + jpg_size);
+                            free(img_buffer);
+                            fclose(jpg);
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        consecutive_failures++;
                     }
 
-                    frame_count++;
-                    if (frame_count % 30 == 0)
-                    {
-                        printf("Sent MJPEG frame %d (%u bytes)\n", frame_count, jpeg_size);
-                    }
-                }
-                else if (bytes_read == 0)
-                {
-                    // No more data available, wait a bit
-                    usleep(10000); // 10ms
+                    free(img_buffer);
                 }
                 else
                 {
-                    printf("Failed to read JPEG data: expected %u, got %zd bytes\n", jpeg_size, bytes_read);
-                    usleep(1000);
+                    consecutive_failures++;
+                    printf("Failed to allocate buffer for frame (%ld bytes)\n", jpg_size);
                 }
             }
             else
             {
-                printf("Invalid JPEG size: %u bytes (max: %zu)\n", jpeg_size, max_frame_size);
-                usleep(1000);
+                consecutive_failures++;
+                if (jpg_size <= 0)
+                {
+                    // Empty file - don't spam logs
+                }
+                else
+                {
+                    printf("Frame too large: %ld bytes\n", jpg_size);
+                }
             }
-        }
-        else if (bytes_read == 0)
-        {
-            // Pipe closed by writer, wait for reconnection
-            usleep(10000); // 10ms
-        }
-        else if (bytes_read == -1)
-        {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-            {
-                // No data available yet
-                usleep(1000); // 1ms
-            }
-            else
-            {
-                printf("Read error: %s\n", strerror(errno));
-                break;
-            }
+
+            fclose(jpg);
         }
         else
         {
-            printf("Partial size read: %zd bytes\n", bytes_read);
-            usleep(1000);
+            consecutive_failures++;
+            // Only log every 100 failures to avoid spam
+            if (consecutive_failures % 100 == 1)
+            {
+                printf("Frame file not available (attempt %d)\n", consecutive_failures);
+            }
         }
+
+        // 15 FPS = 66ms delay for ultra-low latency
+        usleep(66000);
     }
 
-    // Cleanup
-    free(jpeg_data);
-    close(jpeg_fd);
-    printf("=== MJPEG STREAM REQUEST ENDED ===\n");
+    printf("=== MJPEG STREAM ENDED (frames: %u) ===\n", frame_count);
 }
 
 static void handle_main_page(int client_fd)
@@ -271,7 +255,7 @@ static void handle_main_page(int client_fd)
              "};"
              "</script></body></html>",
              device_ip, device_ip);
-    
+
     send_response(client_fd, response);
 }
 
@@ -283,14 +267,14 @@ static void *http_thread(void *arg)
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1)
     {
-        log_error("Failed to create socket");
+        log_message("Failed to create socket: %s", API_LOG_FILE, strerror(errno));
         return NULL;
     }
 
     int opt = 1;
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
     {
-        log_error("Failed to set socket options");
+        log_message("Failed to set socket options: %s", API_LOG_FILE, strerror(errno));
         close(server_fd);
         return NULL;
     }
@@ -301,14 +285,14 @@ static void *http_thread(void *arg)
 
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
-        log_error("Failed to bind socket");
+        log_message("Failed to bind socket: %s", API_LOG_FILE, strerror(errno));
         close(server_fd);
         return NULL;
     }
 
     if (listen(server_fd, 5) < 0)
     {
-        log_error("Failed to listen on socket");
+        log_message("Failed to listen on socket: %s", API_LOG_FILE, strerror(errno));
         close(server_fd);
         return NULL;
     }
@@ -351,7 +335,7 @@ static void *http_thread(void *arg)
         else
         {
             // Send 404 for unknown requests
-            const char *not_found = 
+            const char *not_found =
                 "HTTP/1.1 404 Not Found\r\n"
                 "Content-Type: text/plain\r\n"
                 "Connection: close\r\n\r\n"
@@ -377,7 +361,7 @@ int start_http_server(void)
 
     if (pthread_create(&server_thread, NULL, http_thread, NULL) != 0)
     {
-        log_error("Failed to create HTTP server thread");
+        log_message("Failed to create HTTP server thread: %s", API_LOG_FILE, strerror(errno));
         server_running = 0;
         return -1;
     }

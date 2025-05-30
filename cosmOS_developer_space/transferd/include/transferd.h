@@ -45,7 +45,7 @@ int start_daemon(void);
 int stop_daemon(void);
 int debug_daemon(void);
 
-void log_message(const char* format,  FILE *log_file, ...);
+void log_message(const char* format,  char *log_file, ...);
 
 
 int transferd_loop(void);

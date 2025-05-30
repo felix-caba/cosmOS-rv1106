@@ -83,31 +83,6 @@ void log_error(const char *message)
 	}
 }
 
-bool init_jpeg_streaming()
-{
-    printf("Creating JPEG pipe...\n");
-    log_error("Creating JPEG pipe...");
-    
-    if (mkfifo("/tmp/jpeg_stream", 0666) == -1 && errno != EEXIST)
-    {
-        char error_msg[256];
-        snprintf(error_msg, sizeof(error_msg), "Failed to create JPEG pipe: %s", strerror(errno));
-        log_error(error_msg);
-        printf("ERROR: %s\n", error_msg);
-        return false;
-    }
-
-    printf("JPEG pipe created successfully\n");
-    log_error("JPEG pipe created successfully");
-
-    jpeg_pipe_fd = -1; 
-    jpeg_streaming_initialized = true;
-    
-    printf("JPEG streaming initialized (pipe ready for connection)\n");
-    log_error("JPEG streaming initialized successfully");
-    return true;
-}
-
 int main(int argc, char *argv[])
 {
 	// create log file
@@ -142,11 +117,6 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-
-	if (!init_jpeg_streaming()) {
-        log_error("Failed to initialize JPEG streaming");
-        printf("Warning: JPEG streaming not available\n");
-    }
 
 	RK_S32 s32Ret = 0;
 	int sX, sY, eX, eY;
@@ -228,7 +198,7 @@ int main(int argc, char *argv[])
 	venc_init(0, width, height, enCodecType);
 
 	printf("venc init success\n");
-
+	static int web_frame_counter = 0;
 	while (1)
 	{
 		// get vi frame
@@ -304,66 +274,46 @@ int main(int argc, char *argv[])
 		}
 		memcpy(data, frame.data, width * height * 3);
 
-		if (jpeg_streaming_initialized)
+
+        if (++web_frame_counter % 1 == 0) 
         {
-            
-            std::vector<uchar> jpeg_buffer;
+            std::vector<uchar> buffer;
             std::vector<int> jpeg_params = {
-                cv::IMWRITE_JPEG_QUALITY, 100,   
+                cv::IMWRITE_JPEG_QUALITY, 85, 
             };
             
-            if (cv::imencode(".jpg", frame, jpeg_buffer, jpeg_params))
+            if (cv::imencode(".jpg", frame, buffer, jpeg_params))
             {
-            
-                if (jpeg_pipe_fd < 0)
+                // Atomic write to prevent torn reads - this is MUCH faster than pipes
+                FILE *jpg = fopen("/tmp/frame_new.jpg", "wb");
+                if (jpg)
                 {
-                    jpeg_pipe_fd = open("/tmp/jpeg_stream", O_WRONLY | O_NONBLOCK);
-                    if (jpeg_pipe_fd >= 0)
+                    fwrite(buffer.data(), 1, buffer.size(), jpg);
+                    fclose(jpg);
+                    rename("/tmp/frame_new.jpg", "/tmp/frame.jpg"); // Atomic replace - ultra fast
+                    
+                    static int log_counter = 0;
+                    if (++log_counter % 60 == 0)
                     {
-                        printf("JPEG pipe opened successfully for writing\n");
-                        int pipe_size = 1048576; 
-                        fcntl(jpeg_pipe_fd, F_SETPIPE_SZ, pipe_size);
+                        printf("Updated frame.jpg (%zu bytes) - frame %d\n", buffer.size(), log_counter);
                     }
                 }
-
-                if (jpeg_pipe_fd >= 0)
+                else
                 {
-                    uint32_t jpeg_size = jpeg_buffer.size();
-                    ssize_t written = write(jpeg_pipe_fd, &jpeg_size, sizeof(jpeg_size));
-                    if (written == sizeof(jpeg_size))
+                    static int error_count = 0;
+                    if (++error_count % 100 == 1) // Only log every 100 errors
                     {
-                        written = write(jpeg_pipe_fd, jpeg_buffer.data(), jpeg_size);
-                        if (written == (ssize_t)jpeg_size)
-                        {
-                            static int frame_count = 0;
-                            if (++frame_count % 30 == 0)
-                            {
-                                printf("Successfully streamed JPEG frame %d (%u bytes)\n", frame_count, jpeg_size);
-                            }
-                        }
-                        else if (written == -1)
-                        {
-                            if (errno == EPIPE)
-                            {
-                                close(jpeg_pipe_fd);
-                                jpeg_pipe_fd = -1;
-                                printf("JPEG pipe closed by reader\n");
-                            }
-                            else if (errno != EAGAIN && errno != EWOULDBLOCK)
-                            {
-                                printf("JPEG write error: %s\n", strerror(errno));
-                            }
-                        }
-                        else
-                        {
-                            printf("Partial JPEG write: %zd/%u bytes\n", written, jpeg_size);
-                        }
+                        printf("Failed to open /tmp/frame_new.jpg for writing (error %d)\n", error_count);
                     }
                 }
             }
             else
             {
-                printf("Failed to encode JPEG\n");
+                static int encode_error_count = 0;
+                if (++encode_error_count % 100 == 1) // Only log every 100 errors
+                {
+                    printf("Failed to encode JPEG (error %d)\n", encode_error_count);
+                }
             }
         }
     
@@ -410,11 +360,7 @@ int main(int argc, char *argv[])
 	release_yolov5_model(&rknn_app_ctx);
 	deinit_post_process();
 
-	 if (jpeg_pipe_fd >= 0)
-    {
-        close(jpeg_pipe_fd);
-        unlink("/tmp/jpeg_stream");
-    }
+
 
 
 

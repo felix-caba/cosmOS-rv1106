@@ -57,7 +57,7 @@ int load_config_from_file(transferd_config_t* config_out) {
 
     FILE *file = fopen(CONFIG_FILE, "r");
     if (!file) {
-        log_error("Configuration file %s not found. Using default values.", CONFIG_FILE);
+        log_message("Failed to open configuration file %s: %s", CONFIG_FILE, strerror(errno));
         return -1; 
     }
 
@@ -91,7 +91,7 @@ int load_config_from_file(transferd_config_t* config_out) {
         }
     }
     fclose(file);
-    log_message("Configuration loaded from %s", CONFIG_FILE);
+    log_message("Configuration loaded from %s", CONFIG_FILE, LOG_FILE);
     return 0;
 }
 
@@ -100,7 +100,7 @@ int save_config_to_file(const transferd_config_t* config_in) {
 
     FILE *file = fopen(CONFIG_FILE, "w");
     if (!file) {
-        log_error("Failed to open configuration file %s for writing: %s", CONFIG_FILE, strerror(errno));
+        log_message("Failed to open configuration file %s for writing: %s", CONFIG_FILE, strerror(errno), LOG_FILE);
         return -1;
     }
 
@@ -109,7 +109,7 @@ int save_config_to_file(const transferd_config_t* config_in) {
     fprintf(file, "output_type=%s\n", output_type_to_string(config_in->output_type));
 
     fclose(file);
-    log_message("Configuration saved to %s", CONFIG_FILE);
+    log_message("Configuration saved to %s", CONFIG_FILE, LOG_FILE);
     return 0;
 }
 
@@ -126,7 +126,7 @@ int transferd_load_config(const transferd_config_t* config_to_apply) {
 
         return 1;
     } else {
-        log_error("Failed to initialize transfer logic: null config provided to apply.");
+        log_message("Failed to initialize transfer logic: null config provided to apply.", LOG_FILE);
    
         current_config.source_type = SOURCE_TYPE_NONE;
         return 0; 

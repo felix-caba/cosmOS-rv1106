@@ -20,7 +20,7 @@ void signal_handler(int sig) {
 }
 
 int start_daemon() {
-    log_message("Attempting to start transfer daemon...");
+    log_message("Attempting to start transfer daemon...", LOG_FILE);
 
     FILE *pid_file_check = fopen(PID_FILE, "r");
     if (pid_file_check != NULL) {
@@ -28,14 +28,14 @@ int start_daemon() {
         if (fscanf(pid_file_check, "%d", &existing_pid) == 1) {
             // Verificar si el proceso con existing_pid realmente está corriendo
             if (kill(existing_pid, 0) == 0) {
-                log_error("Daemon is already running with PID: %d", existing_pid);
+                log_message("Daemon is already running with PID: %d", LOG_FILE, existing_pid);
                 fclose(pid_file_check);
                 return -1; // Indicar que ya está corriendo
             } else if (errno == ESRCH) {
-                log_message("Found stale PID file for PID %d, process not running. Overwriting.", existing_pid);
+                log_message("Found stale PID file for PID %d, process not running. Overwriting.", LOG_FILE, existing_pid);
                 // El proceso no existe, el archivo PID es obsoleto, podemos continuar.
             } else {
-                log_error("Error checking status of existing PID %d: %s. Aborting.", existing_pid, strerror(errno));
+                log_message("Error checking status of existing PID %d: %s. Aborting.", LOG_FILE, existing_pid, strerror(errno));
                 fclose(pid_file_check);
                 return -1;
             }
@@ -47,24 +47,24 @@ int start_daemon() {
     pid = fork();
 
     if (pid < 0) { // Error en fork
-        log_error("Fork failed: %s", strerror(errno));
+        log_message("[ERROR] Fork failed: %s", LOG_FILE, strerror(errno));
         exit(EXIT_FAILURE); // Salir en el proceso original si fork falla
     }
 
     if (pid > 0) { // Proceso padre
-        log_message("Daemon process created with PID: %d", pid);
+        log_message("Daemon process created with PID: %d", LOG_FILE, pid);
         exit(EXIT_SUCCESS); // El padre termina exitosamente
     }
     umask(0); 
 
     sid = setsid();
     if (sid < 0) {
-        log_error("setsid failed: %s", strerror(errno));
-        return -1; 
+        log_message("setsid failed: %s", LOG_FILE, strerror(errno));
+        return -1;
     }
 
     if (chdir("/") < 0) {
-        log_error("chdir to / failed: %s", strerror(errno));
+        log_message("chdir to / failed: %s", LOG_FILE, strerror(errno));
         return -1;
     }
 
@@ -88,19 +88,19 @@ int start_daemon() {
     FILE *pid_file_write = fopen(PID_FILE, "w");
 
     if (pid_file_write == NULL) {
-        log_error("Failed to open PID file %s for writing: %s", PID_FILE, strerror(errno));
+        log_message("[ERROR] Failed to open PID file %s for writing: %s", PID_FILE, strerror(errno));
         _exit(EXIT_FAILURE);
     }
 
     fprintf(pid_file_write, "%d\n", getpid());
     fclose(pid_file_write);
 
-    log_message("Daemon (PID: %d) started successfully and is running.", getpid());
-     
-     if (transferd_logic_init() != 0) { 
-        log_error("Transferd: Failed to initialize transfer logic. Daemon exiting.");
-        unlink(PID_FILE); 
-        _exit(EXIT_FAILURE); 
+    log_message("Daemon (PID: %d) started successfully and is running.", LOG_FILE, getpid());
+
+    if (transferd_logic_init() != 0) {
+        log_message("[ERROR] Transferd: Failed to initialize transfer logic. Daemon exiting.", LOG_FILE);
+        unlink(PID_FILE);
+        _exit(EXIT_FAILURE);
     }
 
     while (!terminate_) {
@@ -112,40 +112,40 @@ int start_daemon() {
 
     log_message("Transferd (PID: %d) received termination signal. Shutting down...", getpid());
     if (unlink(PID_FILE) != 0) {
-        log_error("Failed to remove PID file %s: %s", PID_FILE, strerror(errno));
+        log_message("[ERROR] Failed to remove PID file %s: %s", PID_FILE, strerror(errno));
     }
     log_message("Transferd (PID: %d) has shut down.", getpid());
     return 0;
 }
 
 int stop_daemon() {
-    log_message("Attempting to stop transfer daemon...");
+    log_message("Attempting to stop transfer daemon...", LOG_FILE);
 
     FILE *pid_file = fopen(PID_FILE, "r");
     if (pid_file == NULL) {
-        log_error("PID file %s not found. Daemon may not be running or was not started correctly.", PID_FILE);
-        return -1; 
+        log_message("[ERROR] PID file %s not found. Daemon may not be running or was not started correctly.", LOG_FILE, PID_FILE);
+        return -1;
     }
 
     pid_t pid_to_kill;
     if (fscanf(pid_file, "%d", &pid_to_kill) != 1) {
-        log_error("Could not read PID from file %s. File may be corrupted.", PID_FILE);
+        log_message("[ERROR] Could not read PID from file %s. File may be corrupted.", LOG_FILE, PID_FILE);
         fclose(pid_file);
         return -1; 
     }
     fclose(pid_file);
 
-    log_message("Sending SIGTERM to process %d...", pid_to_kill);
+    log_message("Sending SIGTERM to process %d...", LOG_FILE, pid_to_kill);
     if (kill(pid_to_kill, SIGTERM) == -1) {
         if (errno == ESRCH) {
-            log_error("Process with PID %d not found. Daemon may have already stopped or PID file is stale.", pid_to_kill);
+            log_message("[ERROR] Process with PID %d not found. Daemon may have already stopped or PID file is stale.", LOG_FILE, pid_to_kill);
             unlink(PID_FILE);
         } else {
-            log_error("Could not send SIGTERM to process %d: %s.", pid_to_kill, strerror(errno));
+            log_message("[ERROR] Could not send SIGTERM to process %d: %s.", LOG_FILE, pid_to_kill, strerror(errno));
         }
         return -1;
     }
 
-    log_message("SIGTERM sent to process %d. Waiting for daemon to shut down...", pid_to_kill);
+    log_message("SIGTERM sent to process %d. Waiting for daemon to shut down...", LOG_FILE, pid_to_kill);
     return 0; // Señal enviada exitosamente
 }
