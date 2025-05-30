@@ -2,9 +2,9 @@
 #include <stdarg.h>
 #include "../include/transferd.h"
 
-void log_message(const char *format, ...) {
-    FILE *log_file = fopen(LOG_FILE, "a");
-    if (log_file == NULL) {
+void log_message(const char *format, FILE *log_file, ...) {
+    FILE *log_fp = fopen(LOG_FILE, "a");
+    if (log_fp == NULL) {
         perror("fopen (log file)");
         va_list args;
         va_start(args, format);
@@ -16,32 +16,9 @@ void log_message(const char *format, ...) {
 
     va_list args;
     va_start(args, format);
-    vfprintf(log_file, format, args);
+    vfprintf(log_fp, format, args);
     va_end(args);
-    fprintf(log_file, "\n");
-    fclose(log_file);
+    fprintf(log_fp, "\n");
+    fclose(log_fp);
 }
 
-void log_error(const char *format, ...) {
-    FILE *log_file = fopen(LOG_FILE, "a");
-    if (log_file == NULL) {
-        perror("fopen (log file)");
-        fprintf(stderr, "[ERROR] ");  
-        
-        va_list args;
-        va_start(args, format);
-        vfprintf(stderr, format, args);
-        va_end(args);
-        fprintf(stderr, "\n");
-        return;
-    }
-
-    fprintf(log_file, "[ERROR] ");  
-    
-    va_list args;
-    va_start(args, format);
-    vfprintf(log_file, format, args);
-    va_end(args);
-    fprintf(log_file, "\n");
-    fclose(log_file);
-}

@@ -16,17 +16,11 @@
 #include "rtsp_demo.h"
 #include "luckfox_mpi.h"
 #include "yolov5.h"
-
-// #include <libavcodec/avcodec.h>
-// #include <libavformat/avformat.h>
-// #include <libswscale/swscale.h>
-// #include <libavutil/imgutils.h>
-
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#define YOLO_LOG_FILE "/tmp/yolo_log.txt"
+#define YOLO_LOG_FILE "/tmp/yolo_log.log"
 
 #define DISP_WIDTH 720
 #define DISP_HEIGHT 480
@@ -121,7 +115,7 @@ int main(int argc, char *argv[])
 	FILE *log_file = fopen(YOLO_LOG_FILE, "w");
 	if (log_file)
 	{
-		fprintf(log_file, "YOLOv5 RTSP Server Log\n");
+		fprintf(log_file, "YOLOv5 Server Log\n");
 		fclose(log_file);
 	}
 	else
@@ -270,7 +264,7 @@ int main(int argc, char *argv[])
 					mapCoordinates(&eX, &eY);
 					////////////////////////////////////////////////////////////////////////
 					if (detection_output_fd != -1)
-					{ // Only if FD is valid
+					{ 
 						char detection_line_buffer[256];
 						int len = snprintf(detection_line_buffer, sizeof(detection_line_buffer),
 										   "%s\n", coco_cls_to_name(det_result->cls_id));

@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "yolo"
+		},
+		{
+			"path": "transferd"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.css": "css",
+			"css": "css",
+			"*.mm": "objective-cpp",
+			"vector": "cpp",
+			"stat.h": "c",
+			"fcntl.h": "c",
+			"transferd.h": "c",
+			"types.h": "c"
+		}
+	}
+}

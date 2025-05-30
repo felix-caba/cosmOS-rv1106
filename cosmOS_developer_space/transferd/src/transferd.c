@@ -26,7 +26,7 @@ void usage()
     printf("  stop    Stop the transfer daemon\n");
     printf("  status  Show the status of the transfer daemon\n");
     printf("Options:\n");
-    printf("  -l + <option>  Specify the log file option (e.g., 'delete', 'view')\n");
+    printf("  -l + <type> + <option>,   Manage logs (TRANSFERD, YOLO, API) with options (delete, view)\n");
     printf("  -o + <type>,   Specify the transfer output (HTTPS, SCREEN)\n");
     printf("  -s + <type>,   Specify the source type (YOLO, GPIO)\n");
     printf("  -c,   Show configuration options\n");
@@ -56,14 +56,12 @@ int debug_daemon()
     while (1)
     {
         char line[256];
-        // Leer todas las líneas nuevas disponibles
         while (fgets(line, sizeof(line), log_file) != NULL)
         {
             printf("%s", line);
             fflush(stdout);
         }
 
-        // IMPORTANTE: Limpiar eof para que se puedan detectar cambios
         clearerr(log_file);
 
         usleep(200000);
@@ -96,7 +94,7 @@ int transferd_loop()
 
             if (pipe(detection_pipe_fds) == -1)
             { // If pipe fails, return.
-                log_error("TRANSFERD_LOOP: Failed to create pipe for YOLO: %s", strerror(errno));
+                log_message("TRANSFERD_LOOP: Failed to create detection pipe: %s", LOG_FILE, strerror(errno));
                 return;
             }
 
@@ -104,7 +102,7 @@ int transferd_loop()
 
             if (yolo_pid == -1)
             {
-                log_error("TRANSFERD_LOOP: Failed to fork for YOLO: %s", strerror(errno));
+                log_message("TRANSFERD_LOOP: Failed to fork YOLO process: %s", LOG_FILE, strerror(errno));
                 close(detection_pipe_fds[0]);
                 close(detection_pipe_fds[1]);
                 return;
@@ -112,39 +110,23 @@ int transferd_loop()
             else if (yolo_pid == 0) // CHILD
             { 
 
-                log_message("Yolo Child from PID");
+                log_message("Yolo Child from PID", LOG_FILE);
                 const char *yolo_executable_dir = "/usr/bin"; 
 
                 close(detection_pipe_fds[0]); // i closed the reader for the child. only writer.
 
-                int dev_null_fd = open("/dev/null", O_WRONLY);
+                int dev_null_fd = open("/dev/null", O_WRONLY); 
 
-                     if (dev_null_fd != -1) {
-                    // redirect a stdout
+                    if (dev_null_fd != -1) {
                     if (dup2(dev_null_fd, STDOUT_FILENO) < 0) {
-                        log_error("TRANSFERD_LOOP: Child: Failed to dup2 STDOUT_FILENO: %s", strerror(errno));
+                        log_message("TRANSFERD_LOOP: Child: Failed to redirect stdout to /dev/null: %s", LOG_FILE, strerror(errno));
                     }
-                    
-                    // stderr al log file
-                    int transferd_log_fd = open(LOG_FILE, O_WRONLY | O_CREAT | O_APPEND, 0644);
-                    if (transferd_log_fd != -1) {
-                        if (dup2(transferd_log_fd, STDERR_FILENO) < 0) {
-                            log_error("TRANSFERD_LOOP: Child: Failed to dup2 STDERR_FILENO to transferd.log: %s", strerror(errno));
-                        }
-                        if (transferd_log_fd > STDERR_FILENO) {
-                            close(transferd_log_fd);
-                        }
-                    } else {
-                        // dev null otra vez
-                        if (dup2(dev_null_fd, STDERR_FILENO) < 0) {
-                            log_error("TRANSFERD_LOOP: Child: Failed to dup2 STDERR_FILENO: %s", strerror(errno));
-                        }
-                    }
+                
                     if (dev_null_fd > STDERR_FILENO) {
                         close(dev_null_fd);
                     }
                 } else {
-                    log_error("TRANSFERD_LOOP: Child: Failed to open /dev/null for YOLO output redirection: %s", strerror(errno));
+                    log_message("TRANSFERD_LOOP: Child: Failed to open /dev/null for YOLO output redirection: %s", LOG_FILE, strerror(errno));
                 }
 
                 char detection_fd_str[16];
@@ -159,13 +141,13 @@ int transferd_loop()
                 };
 
                  if (chdir(yolo_executable_dir) != 0) {
-                    log_error("TRANSFERD_LOOP: Child: Failed to chdir to %s: %s", yolo_executable_dir, strerror(errno));
+                    log_message("TRANSFERD_LOOP: Child: Failed to change directory to YOLO executable directory: %s", LOG_FILE, strerror(errno));
                     close(detection_pipe_fds[1]);
                     _exit(127); 
                 }
 
                 execvp("YOLO", yolo_argv); // Aqui se termina to
-                log_error("TRANSFERD_LOOP: Failed to exec YOLO process: %s", strerror(errno));
+                log_message("TRANSFERD_LOOP: Failed to exec YOLO process: %s", LOG_FILE, strerror(errno));
                 close(detection_pipe_fds[1]);
                 _exit(EXIT_FAILURE);
             }
@@ -173,11 +155,11 @@ int transferd_loop()
             {                                             
                 close(detection_pipe_fds[1]);              // i closed the writer for the parent. only reader.
                 yolo_pipe_read_fd = detection_pipe_fds[0]; // save the read end of the pipe
-                log_message("TRANSFERD_LOOP: YOLO process started with PID. Father process. %d", yolo_pid);
+                log_message("TRANSFERD_LOOP: YOLO process started with PID. Father process. %d", LOG_FILE, yolo_pid);
                 int flags_detect = fcntl(yolo_pipe_read_fd, F_GETFL, 0);
                 if (flags_detect == -1 || fcntl(yolo_pipe_read_fd, F_SETFL, flags_detect | O_NONBLOCK) == -1)
                 {
-                    log_error("TRANSFERD_LOOP: fcntl failed for YOLO detection pipe FD %d: %s", yolo_pipe_read_fd, strerror(errno));
+                    log_message("TRANSFERD_LOOP: Failed to set YOLO detection pipe (FD %d) to non-blocking mode: %s", LOG_FILE, yolo_pipe_read_fd, strerror(errno));
                     close(yolo_pipe_read_fd);
                     yolo_pipe_read_fd = -1;
                     kill(yolo_pid, SIGKILL);
@@ -190,7 +172,6 @@ int transferd_loop()
         if (yolo_pid > 0 && yolo_pipe_read_fd != -1) // PARENT AND PIPE IS OPEN
         {
 
-            log_message("TRANSFERD_LOOP: Reading from YOLO detection pipe as FATHER (FD %d) for PID %d", yolo_pipe_read_fd, yolo_pid);
             char detection_buffer[1024];
             ssize_t bytes_read;
 
@@ -211,7 +192,7 @@ int transferd_loop()
             }
                else if (bytes_read == 0)
             { // EOF on detection_pipe
-                log_message("TRANSFERD_LOOP: YOLO process (PID %d) closed custom detection pipe (EOF).", yolo_pid);
+                log_message("TRANSFERD_LOOP: YOLO process (PID %d) closed custom detection pipe (EOF).", LOG_FILE, yolo_pid);
                 close(yolo_pipe_read_fd);
                 yolo_pipe_read_fd = -1;
 
@@ -220,21 +201,21 @@ int transferd_loop()
                 
                 if (result == yolo_pid) { 
                     // yolo a la mierda
-                    log_message("TRANSFERD_LOOP: YOLO process (PID %d) confirmed exited with status %d.", yolo_pid, status);
+                    log_message("TRANSFERD_LOOP: YOLO process (PID %d) confirmed exited with status %d.", LOG_FILE, yolo_pid, status);
                     yolo_pid = -1; // Allow restart
                 } 
                 else if (result == 0) { 
                     // 
-                    log_message("TRANSFERD_LOOP: YOLO (PID %d) is still running but pipe closed unexpectedly. Terminating for clean restart.", yolo_pid);
+                    log_message("TRANSFERD_LOOP: YOLO (PID %d) is still running but pipe closed unexpectedly. Terminating for clean restart.", LOG_FILE, yolo_pid);
                     
                     // limpieza
                     if (kill(yolo_pid, SIGTERM) == 0) {
                         usleep(200000); // 200ms
                         result = waitpid(yolo_pid, &status, WNOHANG);
                         if (result == yolo_pid) {
-                            log_message("TRANSFERD_LOOP: YOLO (PID %d) terminated gracefully.", yolo_pid);
+                            log_message("TRANSFERD_LOOP: YOLO (PID %d) terminated gracefully.", LOG_FILE, yolo_pid);
                         } else if (result == 0) {
-                            log_message("TRANSFERD_LOOP: YOLO (PID %d) didn't respond to SIGTERM. Using SIGKILL.", yolo_pid);
+                            log_message("TRANSFERD_LOOP: YOLO (PID %d) didn't respond to SIGTERM. Using SIGKILL.", LOG_FILE, yolo_pid);
                             kill(yolo_pid, SIGKILL);
                             waitpid(yolo_pid, &status, 0);
                         }
@@ -242,7 +223,7 @@ int transferd_loop()
                     yolo_pid = -1; // restart
                 } 
                 else { // waitpid error
-                    log_error("TRANSFERD_LOOP: waitpid error for YOLO PID %d: %s", yolo_pid, strerror(errno));
+                    log_message("TRANSFERD_LOOP: waitpid failed for YOLO process (PID %d): %s", LOG_FILE, yolo_pid, strerror(errno));
                     yolo_pid = -1;
                 }
             }
@@ -254,7 +235,7 @@ int transferd_loop()
                 }
                 else
                 {
-                    log_error("TRANSFERD_LOOP: Error reading from YOLO pipe FD %d: %s", yolo_pipe_read_fd, strerror(errno));
+                    log_message("TRANSFERD_LOOP: Error reading from YOLO detection pipe (FD %d): %s", LOG_FILE, yolo_pipe_read_fd, strerror(errno));
                     close(yolo_pipe_read_fd);
                     yolo_pipe_read_fd = -1;
                     if (yolo_pipe_read_fd != -1)
@@ -279,24 +260,24 @@ int transferd_logic_init()
     yolo_pipe_read_fd = -1;
     yolo_pid = -1;
 
-    log_message("TRANSFERD: Initializing transfer logic...");
+    log_message("TRANSFERD: Initializing transfer logic...", LOG_FILE);
 
     if (load_config_from_file(&current_config) != 0)
     {
-        log_error("TRANSFERD: Failed to load configuration. Using default values.");
+        log_message("TRANSFERD: Failed to load configuration file. Using default values.", LOG_FILE);
         return -1;
     }
 
     if (current_config.output_type == OUTPUT_TYPE_HTTP) {
         if (start_http_server() != 0) {
-        log_error("Failed to start HTTP server");
+        log_message("TRANSFERD: Failed to start HTTP server. Exiting.", LOG_FILE);
         return -1;
         }
     }
     
 
     log_message("TRANSFERD: Configuration loaded successfully. Source: %s",
-                source_type_to_string(current_config.source_type));
+                source_type_to_string(current_config.source_type), LOG_FILE);
     return 0;
 }
 
@@ -338,29 +319,69 @@ int main(int argc, char *argv[])
 
         if (argc < 3)
         {
-            printf("Please specify the log file option (e.g., 'delete', 'view').\n");
+            printf("Please specify the log option (delete, view) and the file type (TRANSFERD, YOLO, API).\n");
             return 1;
         }
-        if (strcmp(argv[2], "delete") == 0)
+
+
+        if (strcmp(argv[2], "TRANSFERD") == 0)
         {
-            if (remove(LOG_FILE) == 0)
+            if (strcmp(argv[3], "delete") == 0)
             {
-                printf("Log file deleted successfully.\n");
+                printf("Deleting transferd log file.\n");
+                remove(LOG_FILE);
+            }
+            else if (strcmp(argv[3], "view") == 0)
+            {
+                printf("Viewing transferd log file:\n");
+                system("cat " LOG_FILE);
             }
             else
             {
-                printf("Failed to delete log file: %s\n", strerror(errno));
+                printf("Invalid option for TRANSFERD log. Use 'delete' or 'view'.\n");
             }
         }
-        else if (strcmp(argv[2], "view") == 0)
+        else if (strcmp(argv[2], "YOLO") == 0)
         {
-            system("cat /var/log/transferd.log");
+            if (strcmp(argv[3], "delete") == 0)
+            {
+                printf("Deleting YOLO log file.\n");
+                remove(YOLO_LOG_FILE);
+            }
+            else if (strcmp(argv[3], "view") == 0)
+            {
+                printf("Viewing YOLO log file:\n");
+                system("cat " YOLO_LOG_FILE);
+            }
+            else
+            {
+                printf("Invalid option for YOLO log. Use 'delete' or 'view'.\n");
+            }
+        }
+        else if (strcmp(argv[2], "API") == 0)
+        {
+            if (strcmp(argv[3], "delete") == 0)
+            {
+                printf("Deleting API log file.\n");
+                remove(API_LOG_FILE);
+            }
+            else if (strcmp(argv[3], "view") == 0)
+            {
+                printf("Viewing API log file:\n");
+                system("cat " API_LOG_FILE);
+            }
+            else
+            {
+                printf("Invalid option for API log. Use 'delete' or 'view'.\n");
+            }
         }
         else
         {
-            printf("Invalid log file option. Use 'delete' or 'view'.\n");
+            printf("Invalid log type. Use 'TRANSFERD', 'YOLO', or 'API'.\n");
         }
-        
+        return 0;
+            
+
     }
     else if (strcmp(argv[1], "-o") == 0)
     {

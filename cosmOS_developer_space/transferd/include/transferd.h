@@ -10,7 +10,12 @@
 #define DAEMON_NAME "transferd"
 #define PID_FILE "/var/run/transferd.pid"
 #define LOG_FILE "/var/log/transferd.log"
+#define YOLO_LOG_FILE "/tmp/yolo_log.log"
+#define API_LOG_FILE "/tmp/api_log.log"
 #define CONFIG_FILE "/etc/transferd.conf"
+
+// vector that contains the loggings 
+
 
 typedef enum {
     SOURCE_TYPE_NONE,
@@ -40,8 +45,8 @@ int start_daemon(void);
 int stop_daemon(void);
 int debug_daemon(void);
 
-void log_message(const char* format, ...);
-void log_error(const char* format, ...);
+void log_message(const char* format,  FILE *log_file, ...);
+
 
 int transferd_loop(void);
 int transferd_logic_init(void);
