@@ -19,14 +19,14 @@ static char *trim_whitespace(char *str) {
 
 static source_type_t string_to_source_type(const char* str) {
     if (strcasecmp(str, "YOLO") == 0) return SOURCE_TYPE_YOLO;
-    if (strcasecmp(str, "GPIO") == 0) return SOURCE_TYPE_GPIO;
+    if (strcasecmp(str, "I2C_TEMP") == 0) return SOURCE_TYPE_I2C_TEMP;
     return SOURCE_TYPE_NONE;
 }
 
 const char* source_type_to_string(source_type_t type) {
     switch (type) {
         case SOURCE_TYPE_YOLO: return "YOLO";
-        case SOURCE_TYPE_GPIO: return "GPIO";
+        case SOURCE_TYPE_I2C_TEMP: return "I2C_TEMP";
         default: return "NONE";
     }
 }

@@ -277,20 +277,20 @@ int main(int argc, char *argv[])
 
         if (++web_frame_counter % 1 == 0) 
         {
-            std::vector<uchar> buffer;
+            std::vector<uchar> buffer; // buffer for jpeg data, resize as needed
             std::vector<int> jpeg_params = {
                 cv::IMWRITE_JPEG_QUALITY, 85, 
             };
             
             if (cv::imencode(".jpg", frame, buffer, jpeg_params))
             {
-                // Atomic write to prevent torn reads - this is MUCH faster than pipes
-                FILE *jpg = fopen("/tmp/frame_new.jpg", "wb");
+                
+                FILE *jpg = fopen("/tmp/frame_new.jpg", "wb"); // open atomic
                 if (jpg)
                 {
                     fwrite(buffer.data(), 1, buffer.size(), jpg);
                     fclose(jpg);
-                    rename("/tmp/frame_new.jpg", "/tmp/frame.jpg"); // Atomic replace - ultra fast
+                    rename("/tmp/frame_new.jpg", "/tmp/frame.jpg"); 
                     
                     static int log_counter = 0;
                     if (++log_counter % 60 == 0)
@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
                 else
                 {
                     static int error_count = 0;
-                    if (++error_count % 100 == 1) // Only log every 100 errors
+                    if (++error_count % 100 == 1) // cada 100
                     {
                         printf("Failed to open /tmp/frame_new.jpg for writing (error %d)\n", error_count);
                     }
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
             else
             {
                 static int encode_error_count = 0;
-                if (++encode_error_count % 100 == 1) // Only log every 100 errors
+                if (++encode_error_count % 100 == 1) 
                 {
                     printf("Failed to encode JPEG (error %d)\n", encode_error_count);
                 }

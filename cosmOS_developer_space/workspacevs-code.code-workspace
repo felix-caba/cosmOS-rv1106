@@ -16,7 +16,18 @@
 			"stat.h": "c",
 			"fcntl.h": "c",
 			"transferd.h": "c",
-			"types.h": "c"
+			"types.h": "c",
+			"ioctl.h": "c",
+			"string.h": "c",
+			"stdlib.h": "c",
+			"stdint.h": "c",
+			"cstdint": "c",
+			"i2c-dev.h": "c",
+			"unistd.h": "c",
+			"stdarg.h": "c",
+			"stdio.h": "c",
+			"ssd1306xled.h": "c",
+			"font.h": "c"
 		}
 	}
 }

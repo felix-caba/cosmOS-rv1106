@@ -20,7 +20,7 @@ static pthread_t server_thread;
 static int server_running = 0;
 static char latest_message[256] = "";
 
-void update_detection(const char *object_name)
+void update_api(const char *object_name)
 {
     time_t now = time(NULL);
     snprintf(latest_message, sizeof(latest_message),
@@ -101,7 +101,7 @@ static void handle_mjpeg_stream(int client_fd)
         printf("Failed to send MJPEG header\n");
         return;
     }
-
+    
     uint32_t frame_count = 0;
     int consecutive_failures = 0;
     const int MAX_FAILURES = 50; // More tolerance for missing files

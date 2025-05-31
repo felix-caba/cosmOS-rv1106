@@ -77,11 +77,17 @@ void version()
     printf("License: GPLv3\n");
 }
 
+void update_output(const char* object_name) {
+    if (current_config.output_type == OUTPUT_TYPE_HTTP) {
+        update_api(object_name); 
+    }
+    if (current_config.output_type == OUTPUT_TYPE_SCREEN) {
+        update_screen(object_name);     
+    }
+}
+
 int transferd_loop()
-
 {
-
-    system("echo 3 > /proc/sys/kernel/printk 2>/dev/null"); // quita los logs del kernel
 
     if (current_config.source_type == SOURCE_TYPE_YOLO)
     {
@@ -190,7 +196,7 @@ int transferd_loop()
                     
                     log_message("YOLO_DETECTION_DATA: %s", LOG_FILE, line);
 
-                    update_detection(line);
+                    update_output(line);
 
                     line = strtok(NULL, "\n");
                 }
@@ -263,6 +269,11 @@ int transferd_loop()
         }
     }
 
+    if (current_config.source_type == SOURCE_TYPE_I2C_TEMP)
+    {
+        // Todo
+    }
+
     return 0;
 }
 
@@ -279,7 +290,6 @@ int transferd_logic_init()
         return -1;
     }
 
-     log_message("TRANSFERDXD: Initializing transfer logic...", LOG_FILE);
     if (current_config.output_type == OUTPUT_TYPE_HTTP)
     {
         if (start_http_server() != 0)
@@ -288,7 +298,16 @@ int transferd_logic_init()
             return -1;
         }
     }
-     log_message("TRANSFERD:xxxxxxx Initializing transfer logic...", LOG_FILE);
+
+    if (current_config.output_type == OUTPUT_TYPE_SCREEN)
+    {
+        if (start_screen() != 0)
+        {
+            log_message("TRANSFERD: Failed to start screen output. Exiting.", LOG_FILE);
+            return -1;
+        }
+    }
+
     log_message("TRANSFERD: Configuration loaded successfully. Source: %s",
                 source_type_to_string(current_config.source_type), LOG_FILE);
     return 0;
@@ -476,7 +495,7 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[2], "GPIO") == 0)
         {
             printf("Source type set to GPIO. Restart daemon for changes\n");
-            current_config.source_type = SOURCE_TYPE_GPIO;
+            current_config.source_type = SOURCE_TYPE_I2C_TEMP;
             if (save_config_to_file(&current_config) != 0)
             {
                 printf("Failed to save configuration.\n");

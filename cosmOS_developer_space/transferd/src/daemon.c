@@ -108,7 +108,12 @@ int start_daemon() {
         usleep(200000);
     }
 
-    stop_http_server();
+    if (current_config.output_type == OUTPUT_TYPE_SCREEN) {
+        stop_screen();
+    }
+    if (current_config.output_type == OUTPUT_TYPE_HTTP) {
+        stop_http_server();
+    }
 
     log_message("Transferd (PID: %d) received termination signal. Shutting down...", getpid());
     if (unlink(PID_FILE) != 0) {

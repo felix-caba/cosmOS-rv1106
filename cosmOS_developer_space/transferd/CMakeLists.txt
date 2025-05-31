@@ -5,6 +5,8 @@ set(LUCKFOX_SDK_PATH "/home/felix/docker-shared/cosmOS-rv1106/")
 set(SDK_PATH "${LUCKFOX_SDK_PATH}")
 set(GLIBC_COMPILER $ENV{GLIBC_COMPILER})
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Configure cross-compilation BEFORE project()
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR arm)
@@ -33,7 +35,7 @@ if(${LIBC_TYPE} STREQUAL "uclibc")
         # Configure find paths
         set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
         set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-        set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+        set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
         set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
         
         # Disable compiler checks for cross-compilation
@@ -54,7 +56,14 @@ project(transferd)
 
 add_compile_options(-Wall -g)
 
-include_directories(include)
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+include_directories(SYSTEM 
+        "${CMAKE_SYSROOT}/usr/include"
+        "${TOOLCHAIN_PATH}/${TOOLCHAIN_PREFIX}/include"
+    )
 
 # Find required packages
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -62,13 +71,12 @@ find_package(Threads REQUIRED)
 
 # Source files
 set(SRCS 
+    src/screen.c
     src/config.c
     src/daemon.c
     src/log.c
     src/transferd.c
     src/api.c
-    src/sources/gpio.c
-    src/sources/yolo.c
 )
 
 add_executable(${PROJECT_NAME} ${SRCS})

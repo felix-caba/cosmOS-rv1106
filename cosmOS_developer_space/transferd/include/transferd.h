@@ -10,16 +10,16 @@
 #define DAEMON_NAME "transferd"
 #define PID_FILE "/var/run/transferd.pid"
 #define LOG_FILE "/var/log/transferd.log"
-#define YOLO_LOG_FILE "/tmp/yolo_log.log"
-#define API_LOG_FILE "/tmp/api_log.log"
+#define YOLO_LOG_FILE "/tmp/yolo.log"
+#define API_LOG_FILE "/tmp/api.log"
+#define SCREEN_LOG_FILE "/tmp/screen.log"
 #define CONFIG_FILE "/etc/transferd.conf"
 
-// vector that contains the loggings 
 
 
 typedef enum {
     SOURCE_TYPE_NONE,
-    SOURCE_TYPE_GPIO,
+    SOURCE_TYPE_I2C_TEMP,
     SOURCE_TYPE_YOLO
 } source_type_t;
 
@@ -31,15 +31,11 @@ typedef enum {
 typedef struct {
     source_type_t source_type;
     output_type_t output_type;
-    
-    union {
-        struct {
-            int pin;
-            int poll_interval_ms;
-        } gpio;
-    } source_config;
+
 
 } transferd_config_t;
+
+extern transferd_config_t current_config;   // Configuracion global
 
 int start_daemon(void);
 int stop_daemon(void);
@@ -58,6 +54,11 @@ const char* source_type_to_string(source_type_t type);
 
 int start_http_server(void);
 void stop_http_server(void);
-void update_detection(const char* object_name);
+void update_api(const char* object_name);
+
+int start_screen(void);
+void stop_screen(void);
+void update_screen(const char* object_name);
+
 
 #endif /* TRANSFERD_H */
