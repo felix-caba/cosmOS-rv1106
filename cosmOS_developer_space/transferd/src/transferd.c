@@ -13,6 +13,7 @@
 #include <errno.h>
 
 transferd_config_t current_config;
+static char last_detection[32] = ""; // Caché para no actualizar la pantalla si no hay cambios
 static int yolo_pipe_read_fd = -1;
 static pid_t yolo_pid = -1;
 
@@ -77,13 +78,33 @@ void version()
     printf("License: GPLv3\n");
 }
 
+/*
+    Actualiza el output según la configuración actual, HTTP o Screen, solo si hay un cambio en la detección.
+    Así no se jode la pantalla con refrescos constantes.
+*/
 void update_output(const char* object_name) {
+
+    if (object_name == NULL || strlen(object_name) == 0) {
+        log_message("Received empty object name, skipping update.", LOG_FILE);
+        return;
+    }
+
+    if (last_detection[0] != '\0' && strcmp(last_detection, object_name) == 0) {
+        log_message("No change in detection, skipping update for: %s", LOG_FILE, object_name);
+        return; // No hay cambio, no actualizamos
+    }
+
     if (current_config.output_type == OUTPUT_TYPE_HTTP) {
         update_api(object_name); 
     }
     if (current_config.output_type == OUTPUT_TYPE_SCREEN) {
         update_screen(object_name);     
     }
+
+    log_message("Updated output with detection: %s", LOG_FILE, object_name);
+    strncpy(last_detection, object_name, sizeof(last_detection) - 1);
+    last_detection[sizeof(last_detection) - 1] = '\0'; 
+
 }
 
 int transferd_loop()
@@ -92,7 +113,7 @@ int transferd_loop()
     if (current_config.source_type == SOURCE_TYPE_YOLO)
     {
 
-        if (yolo_pid == -1) // SI no esta CORRIENDO EL yolamen
+        if (yolo_pid == -1) // Si yolo no está corriendo
         {
             log_message("Not running, creating PID: %d", LOG_FILE, yolo_pid);
             int detection_pipe_fds[2];
@@ -179,7 +200,7 @@ int transferd_loop()
             }
         }
 
-        if (yolo_pid > 0 && yolo_pipe_read_fd != -1) // PARENT AND PIPE IS OPEN
+        if (yolo_pid > 0 && yolo_pipe_read_fd != -1) // Accede el padre y la pipe está abierta
         {
 
             char detection_buffer[1024];
@@ -277,6 +298,9 @@ int transferd_loop()
     return 0;
 }
 
+/*
+    Inicializa la lógica de transferencia, carga la configuración y arranca los servicios necesarios.
+*/
 int transferd_logic_init()
 {
     yolo_pipe_read_fd = -1;
@@ -290,7 +314,7 @@ int transferd_logic_init()
         return -1;
     }
 
-    if (current_config.output_type == OUTPUT_TYPE_HTTP)
+    if (current_config.output_type == OUTPUT_TYPE_HTTP)  // Init del servidor HTTP
     {
         if (start_http_server() != 0)
         {
@@ -299,7 +323,7 @@ int transferd_logic_init()
         }
     }
 
-    if (current_config.output_type == OUTPUT_TYPE_SCREEN)
+    if (current_config.output_type == OUTPUT_TYPE_SCREEN)   // Init de la pantalla 
     {
         if (start_screen() != 0)
         {

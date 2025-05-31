@@ -44,6 +44,9 @@
 #define SSD1306_SET_COLUMN_ADDR  0x21
 #define SSD1306_MEMORY_MODE      0x20
 
+static ssd1306_t global_display;
+static int screen_initialized = 0;
+
 typedef struct {
     int fd;
     int reset_fd;
@@ -196,30 +199,53 @@ void ssd1306_cleanup(ssd1306_t *display) {
 }
 
 /*
-    Inicializar el Pipe que está sirviendo Yolo o I2c temp.
+    Actualiza la pantalla con el nombre del objeto.
 */
 void update_screen(const char *object_name) {
+    if (!screen_initialized) {
+        log_message("[WARNING] Screen not initialized, ignoring update", SCREEN_LOG_FILE);
+        return;
+    }
     
+    ssd1306_clear(&global_display);
+    
+    ssd1306_write_string(&global_display, "COSMOS Detection:", 0, 0);   // Esto en la página 0
+    
+    char display_text[16];
+    strncpy(display_text, object_name, 15);
+    display_text[15] = '\0';
+    ssd1306_write_string(&global_display, display_text, 0, 1);
+    
+    log_message("Screen updated with detection: %s", SCREEN_LOG_FILE, object_name);
 }
 
 int start_screen(void) {
-    ssd1306_t display;
-    
-    if (ssd1306_init(&display, "/dev/i2c-1") == 0) {
+    if (ssd1306_init(&global_display, "/dev/i2c-1") == 0) {
+        screen_initialized = 1;
         log_message("Pantalla SSD1306 inicializada correctamente en i2c-1", SCREEN_LOG_FILE);
-        ssd1306_clear(&display);
-        ssd1306_cleanup(&display);
+        
+        // Mensaje inicial
+        ssd1306_clear(&global_display);
+        ssd1306_write_string(&global_display, "COSMOS Ready", 0, 0);
+        ssd1306_write_string(&global_display, "Waiting...", 0, 1);
+        
         return 0;
     } else {
+        screen_initialized = 0;
         log_message("Error al inicializar la pantalla SSD1306", SCREEN_LOG_FILE);
         return -1;
     }
 }
 
 void stop_screen(void) {
-    ssd1306_t display;
-    ssd1306_cleanup(&display);
-    log_message("Pantalla SSD1306 detenida", SCREEN_LOG_FILE);
+    if (screen_initialized) {
+        ssd1306_clear(&global_display);
+        ssd1306_write_string(&global_display, "COSMOS Stopped", 0, 0);
+        sleep(1);  
+        ssd1306_cleanup(&global_display);
+        screen_initialized = 0;
+        log_message("Pantalla SSD1306 detenida", SCREEN_LOG_FILE);
+    }
 }
 
 int main() {

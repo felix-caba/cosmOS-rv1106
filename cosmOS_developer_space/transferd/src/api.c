@@ -20,6 +20,10 @@ static pthread_t server_thread;
 static int server_running = 0;
 static char latest_message[256] = "";
 
+
+/*
+    Actualiza el mensaje de la API con el nombre del objeto y la marca de tiempo actual
+*/
 void update_api(const char *object_name)
 {
     time_t now = time(NULL);
