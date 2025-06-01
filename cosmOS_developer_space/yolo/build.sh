@@ -64,7 +64,6 @@ if [[ -d "$src_dir" ]]; then
         ls -la "$INSTALL_DIR/uclibc/luckfox_pico_rtsp_yolov5_demo/luckfox_pico_rtsp_yolov5"
         file "$INSTALL_DIR/uclibc/luckfox_pico_rtsp_yolov5_demo/luckfox_pico_rtsp_yolov5"
     else
-        echo "ERROR: Executable not found at expected location!"
         echo "Checking build directory for executable..."
         find . -name "luckfox_pico_rtsp_yolov5" -type f -executable
     fi

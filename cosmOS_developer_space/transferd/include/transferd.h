@@ -15,8 +15,6 @@
 #define SCREEN_LOG_FILE "/tmp/screen.log"
 #define CONFIG_FILE "/etc/transferd.conf"
 
-
-
 typedef enum {
     SOURCE_TYPE_NONE,
     SOURCE_TYPE_I2C_TEMP,
@@ -48,9 +46,10 @@ int transferd_loop(void);
 int transferd_logic_init(void);
 
 int transferd_load_config(const transferd_config_t* config);
-int load_config_from_file(transferd_config_t* config_out);
+void load_config_from_file(transferd_config_t* config_out);
 int save_config_to_file(const transferd_config_t* config_in);
 const char* source_type_to_string(source_type_t type);
+const char* output_type_to_string(output_type_t type);
 
 int start_http_server(void);
 void stop_http_server(void);

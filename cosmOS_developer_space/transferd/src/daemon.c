@@ -20,6 +20,9 @@ void signal_handler(int sig) {
 }
 
 int start_daemon() {
+    
+    system("echo 3 > /proc/sys/kernel/printk 2>/dev/null");
+
     log_message("Attempting to start transfer daemon...", LOG_FILE);
 
     FILE *pid_file_check = fopen(PID_FILE, "r");
@@ -115,11 +118,11 @@ int start_daemon() {
         stop_http_server();
     }
 
-    log_message("Transferd (PID: %d) received termination signal. Shutting down...", getpid());
+    log_message("Transferd (PID: %d) received termination signal. Shutting down...", LOG_FILE , getpid());
     if (unlink(PID_FILE) != 0) {
         log_message("[ERROR] Failed to remove PID file %s: %s", PID_FILE, strerror(errno));
     }
-    log_message("Transferd (PID: %d) has shut down.", getpid());
+    log_message("Transferd (PID: %d) has shut down.", LOG_FILE, getpid());
     return 0;
 }
 

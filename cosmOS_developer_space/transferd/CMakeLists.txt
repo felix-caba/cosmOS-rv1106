@@ -19,7 +19,7 @@ if(${LIBC_TYPE} STREQUAL "uclibc")
         set(TOOLCHAIN_PREFIX "arm-rockchip830-linux-uclibcgnueabihf")
         set(TOOLCHAIN_PATH "${SDK_PATH}/tools/linux/toolchain/${TOOLCHAIN_PREFIX}")
         
-        # Verify toolchain exists
+        # toolchain
         if(NOT EXISTS "${TOOLCHAIN_PATH}/bin/${TOOLCHAIN_PREFIX}-gcc")
             message(FATAL_ERROR "Toolchain not found at: ${TOOLCHAIN_PATH}")
         endif()
@@ -28,17 +28,17 @@ if(${LIBC_TYPE} STREQUAL "uclibc")
         set(CMAKE_CXX_COMPILER "${TOOLCHAIN_PATH}/bin/${TOOLCHAIN_PREFIX}-g++")
         set(CMAKE_STRIP "${TOOLCHAIN_PATH}/bin/${TOOLCHAIN_PREFIX}-strip")
         
-        # Set the correct sysroot
+        # sysroot
         set(CMAKE_SYSROOT "${TOOLCHAIN_PATH}/${TOOLCHAIN_PREFIX}/sysroot")
         set(CMAKE_FIND_ROOT_PATH "${TOOLCHAIN_PATH}/${TOOLCHAIN_PREFIX}/sysroot")
         
-        # Configure find paths
+        # finds
         set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
         set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
         set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
         set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
         
-        # Disable compiler checks for cross-compilation
+        # checks cross
         set(CMAKE_C_COMPILER_WORKS 1)
         set(CMAKE_CXX_COMPILER_WORKS 1)
     endif()
@@ -71,6 +71,7 @@ find_package(Threads REQUIRED)
 
 # Source files
 set(SRCS 
+    src/font.c
     src/screen.c
     src/config.c
     src/daemon.c

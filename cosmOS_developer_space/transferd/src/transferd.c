@@ -25,11 +25,14 @@ void usage()
     printf("  start   Start the transfer daemon\n");
     printf("  stop    Stop the transfer daemon\n");
     printf("  status  Show the status of the transfer daemon\n");
+
     printf("Options:\n");
-    printf("  -l + <type> + <option>,   Manage logs (trans, yolo, api) with options (delete, view)\n");
-    printf("  -o + <type>,   Specify the transfer output (HTTPS, SCREEN)\n");
-    printf("  -s + <type>,   Specify the source type (YOLO, GPIO)\n");
-    printf("  -c,   Show configuration options\n");
+    printf("  -l + <type>,   View logs (transferd, yolo, api, screen)\n");
+    printf("  -o + <type>,   Specify the transfer output (http, screen)\n");
+    printf("  -s + <type>,   Specify the source type (yolo, i2c)\n");
+
+    printf("  -cc,  Show current configuration, if daemon is running\n");
+    printf("  -cf,  Show configuration file\n");
     printf("  -h,   Show this help message\n");
     printf("  -v,   Show version information\n");
     printf("  -d,   Show debugging information\n");
@@ -82,29 +85,33 @@ void version()
     Actualiza el output según la configuración actual, HTTP o Screen, solo si hay un cambio en la detección.
     Así no se jode la pantalla con refrescos constantes.
 */
-void update_output(const char* object_name) {
+void update_output(const char *object_name)
+{
 
-    if (object_name == NULL || strlen(object_name) == 0) {
+    if (object_name == NULL || strlen(object_name) == 0)
+    {
         log_message("Received empty object name, skipping update.", LOG_FILE);
         return;
     }
 
-    if (last_detection[0] != '\0' && strcmp(last_detection, object_name) == 0) {
+    if (last_detection[0] != '\0' && strcmp(last_detection, object_name) == 0)
+    {
         log_message("No change in detection, skipping update for: %s", LOG_FILE, object_name);
         return; // No hay cambio, no actualizamos
     }
 
-    if (current_config.output_type == OUTPUT_TYPE_HTTP) {
-        update_api(object_name); 
+    if (current_config.output_type == OUTPUT_TYPE_HTTP)
+    {
+        update_api(object_name);
     }
-    if (current_config.output_type == OUTPUT_TYPE_SCREEN) {
-        update_screen(object_name);     
+    if (current_config.output_type == OUTPUT_TYPE_SCREEN)
+    {
+        update_screen(object_name);
     }
 
     log_message("Updated output with detection: %s", LOG_FILE, object_name);
     strncpy(last_detection, object_name, sizeof(last_detection) - 1);
-    last_detection[sizeof(last_detection) - 1] = '\0'; 
-
+    last_detection[sizeof(last_detection) - 1] = '\0';
 }
 
 int transferd_loop()
@@ -121,17 +128,17 @@ int transferd_loop()
             if (pipe(detection_pipe_fds) == -1)
             { // If pipe fails, return.
                 log_message("TRANSFERD_LOOP: Failed to create detection pipe: %s", LOG_FILE, strerror(errno));
-                return;
+                return -1;
             }
 
             yolo_pid = fork();
 
-            if (yolo_pid == -1)
+            if (yolo_pid == -1) 
             {
                 log_message("TRANSFERD_LOOP: Failed to fork YOLO process: %s", LOG_FILE, strerror(errno));
                 close(detection_pipe_fds[0]);
                 close(detection_pipe_fds[1]);
-                return;
+                return -1;
             }
             else if (yolo_pid == 0) // CHILD
             {
@@ -160,7 +167,7 @@ int transferd_loop()
                     log_message("TRANSFERD_LOOP: Child: Failed to open /dev/null for YOLO output redirection: %s", LOG_FILE, strerror(errno));
                 }
 
-                char detection_fd_str[16];
+                char detection_fd_str[16]; 
                 snprintf(detection_fd_str, sizeof(detection_fd_str), "%d", detection_pipe_fds[1]);
 
                 char *const yolo_argv[] = {
@@ -214,7 +221,7 @@ int transferd_loop()
                 char *line = strtok(detection_buffer, "\n");
                 while (line != NULL)
                 {
-                    
+
                     log_message("YOLO_DETECTION_DATA: %s", LOG_FILE, line);
 
                     update_output(line);
@@ -308,13 +315,13 @@ int transferd_logic_init()
 
     log_message("TRANSFERD: Initializing transfer logic...", LOG_FILE);
 
-    if (load_config_from_file(&current_config) != 0)
-    {
-        log_message("TRANSFERD: Failed to load configuration file. Using default values.", LOG_FILE);
-        return -1;
-    }
+    load_config_from_file(&current_config);
 
-    if (current_config.output_type == OUTPUT_TYPE_HTTP)  // Init del servidor HTTP
+    log_message("TRANSFERD: Loaded configuration: Source: %s, Output: %s", LOG_FILE,
+                source_type_to_string(current_config.source_type),
+                output_type_to_string(current_config.output_type));
+
+    if (current_config.output_type == OUTPUT_TYPE_HTTP) // Init del servidor HTTP
     {
         if (start_http_server() != 0)
         {
@@ -323,7 +330,7 @@ int transferd_logic_init()
         }
     }
 
-    if (current_config.output_type == OUTPUT_TYPE_SCREEN)   // Init de la pantalla 
+    if (current_config.output_type == OUTPUT_TYPE_SCREEN) // Init de la pantalla
     {
         if (start_screen() != 0)
         {
@@ -332,8 +339,8 @@ int transferd_logic_init()
         }
     }
 
-    log_message("TRANSFERD: Configuration loaded successfully. Source: %s",
-                source_type_to_string(current_config.source_type), LOG_FILE);
+    log_message("TRANSFERD: Configuration loaded successfully. Source: %s", LOG_FILE,
+                source_type_to_string(current_config.source_type));
     return 0;
 }
 
@@ -370,67 +377,29 @@ int main(int argc, char *argv[])
     }
     else if (strcmp(argv[1], "-l") == 0)
     {
-
         if (argc < 3)
         {
-            printf("Please specify the log option (delete, view) and the file type (TRANSFERD, YOLO, API).\n");
+            printf("Please specify the log option (delete, view) and the file type (transferd, yolo, api, screen).\n");
             return 1;
         }
-
-        if (strcmp(argv[2], "trans") == 0)
+        if (strcmp(argv[2], "transferd") == 0)
         {
-            if (strcmp(argv[3], "delete") == 0)
-            {
-                printf("Deleting transferd log file.\n");
-                remove(LOG_FILE);
-            }
-            else if (strcmp(argv[3], "view") == 0)
-            {
-                printf("Viewing transferd log file:\n");
-                system("cat " LOG_FILE);
-            }
-            else
-            {
-                printf("Invalid option for TRANSFERD log. Use 'delete' or 'view'.\n");
-            }
+            system("cat " LOG_FILE);
         }
         else if (strcmp(argv[2], "yolo") == 0)
         {
-            if (strcmp(argv[3], "delete") == 0)
-            {
-                printf("Deleting YOLO log file.\n");
-                remove(YOLO_LOG_FILE);
-            }
-            else if (strcmp(argv[3], "view") == 0)
-            {
-                printf("Viewing YOLO log file:\n");
-                system("cat " YOLO_LOG_FILE);
-            }
-            else
-            {
-                printf("Invalid option for YOLO log. Use 'delete' or 'view'.\n");
-            }
+            system("cat " YOLO_LOG_FILE);
         }
         else if (strcmp(argv[2], "api") == 0)
         {
-            if (strcmp(argv[3], "delete") == 0)
-            {
-                printf("Deleting API log file.\n");
-                remove(API_LOG_FILE);
-            }
-            else if (strcmp(argv[3], "view") == 0)
-            {
-                printf("Viewing API log file:\n");
-                system("cat " API_LOG_FILE);
-            }
-            else
-            {
-                printf("Invalid option for API log. Use 'delete' or 'view'.\n");
-            }
+            system("cat " API_LOG_FILE);
         }
-        else
+        else if (strcmp(argv[2], "screen") == 0)
         {
-            printf("Invalid log type. Use 'TRANSFERD', 'YOLO', or 'API'.\n");
+            system("cat " SCREEN_LOG_FILE);
+        }
+        {
+            printf("Invalid log type. Use 'transferd', 'yolo', 'api or 'screen'.\n");
         }
         return 0;
     }
@@ -442,13 +411,7 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-        // Cargar configuración actual primero
-        if (load_config_from_file(&current_config) != 0)
-        {
-            // Si no existe config, usar valores por defecto
-            current_config.source_type = SOURCE_TYPE_YOLO;
-            current_config.output_type = OUTPUT_TYPE_HTTP;
-        }
+        load_config_from_file(&current_config);
 
         if (strcmp(argv[2], "HTTP") == 0)
         {
@@ -475,10 +438,17 @@ int main(int argc, char *argv[])
             printf("Invalid output type. Use 'HTTP' or 'SCREEN'.\n");
         }
     }
-    else if (strcmp(argv[1], "-c") == 0)
+    else if (strcmp(argv[1], "-cf") == 0)
     {
-        printf("Current configuration:\n");
+        printf("Current configuration file:\n");
         system("cat /etc/transferd.conf");
+    }
+    else if (strcmp(argv[1], "-cc") == 0)
+    {
+        load_config_from_file(&current_config);
+        printf("Current configuration:\n");
+        printf("Source Type: %s\n", source_type_to_string(current_config.source_type));
+        printf("Output Type: %s\n", output_type_to_string(current_config.output_type));
     }
     else if (strcmp(argv[1], "-h") == 0)
     {
@@ -496,30 +466,24 @@ int main(int argc, char *argv[])
     {
         if (argc < 3)
         {
-            printf("Please specify the source type (YOLO or GPIO).\n");
+            printf("Please specify the source type (yolo or i2c).\n");
             return 1;
         }
 
-        if (load_config_from_file(&current_config) != 0)
-        {
-            current_config.source_type = SOURCE_TYPE_YOLO;
-            current_config.output_type = OUTPUT_TYPE_HTTP;
-        }
+        load_config_from_file(&current_config);
 
-        if (strcmp(argv[2], "YOLO") == 0)
+        if (strcmp(argv[2], "yolo") == 0)
         {
-            printf("Source type set to YOLO. Restart daemon for changes\n");
-            current_config.source_type = SOURCE_TYPE_YOLO;
+            printf("Source type set to yolo. Restart daemon for changes\n");
             if (save_config_to_file(&current_config) != 0)
             {
                 printf("Failed to save configuration.\n");
                 return 1;
             }
         }
-        else if (strcmp(argv[2], "GPIO") == 0)
+        else if (strcmp(argv[2], "i2c") == 0)
         {
-            printf("Source type set to GPIO. Restart daemon for changes\n");
-            current_config.source_type = SOURCE_TYPE_I2C_TEMP;
+            printf("Source type set to i2c. Restart daemon for changes\n");
             if (save_config_to_file(&current_config) != 0)
             {
                 printf("Failed to save configuration.\n");
