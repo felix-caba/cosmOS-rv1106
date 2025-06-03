@@ -13,7 +13,11 @@
 #define YOLO_LOG_FILE "/tmp/yolo.log"
 #define API_LOG_FILE "/tmp/api.log"
 #define SCREEN_LOG_FILE "/tmp/screen.log"
+#define TEMP_LOG_FILE "/tmp/temp.log"
 #define CONFIG_FILE "/etc/transferd.conf"
+
+#define MAX_DETECTIONS 4
+#define MAX_DETECTION_NAME_LEN 8
 
 typedef enum {
     SOURCE_TYPE_NONE,
@@ -29,9 +33,18 @@ typedef enum {
 typedef struct {
     source_type_t source_type;
     output_type_t output_type;
-
-
 } transferd_config_t;
+
+typedef struct {
+    char name[MAX_DETECTION_NAME_LEN];
+    int count; // Cantidad de detecciones
+    int active;
+} detection_t;
+
+typedef struct {            // Estado de las detecciones.
+    detection_t detections[MAX_DETECTIONS];
+    int total_count;
+} detection_state_t;
 
 extern transferd_config_t current_config;   // Configuracion global
 
@@ -59,5 +72,9 @@ int start_screen(void);
 void stop_screen(void);
 void update_screen(const char* object_name);
 
+int start_temp_sensor(void);
+void stop_temp_sensor(void);
+void update_temp_reading(void);
+char* get_temp_reading(void);
 
 #endif /* TRANSFERD_H */

@@ -5,6 +5,7 @@
 #include <linux/i2c-dev.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "../include/font.h"
 #include "../include/transferd.h"
@@ -41,8 +42,6 @@
     128/16 = 8. 8 caracteres de largo por fila.
     pero de vertical, al ser tambien 16, son 2 filas ocupadas de vertical.
 
-
-
 */
 
 #define SSD1306_I2C_ADDR 0x3C
@@ -63,9 +62,10 @@
 
 typedef struct
 {
-    int fd;
-    int reset_fd;
-    uint8_t buffer[SSD1306_WIDTH * SSD1306_PAGES];
+    int fd;                                        // file descriptor del i2c
+    int reset_fd;                                  // sin uso ahora
+    uint8_t buffer[SSD1306_WIDTH * SSD1306_PAGES]; // mapeo de la pantalla fisica.
+    //
 } ssd1306_t;
 
 static ssd1306_t global_display;
@@ -222,6 +222,7 @@ int ssd1306_init(ssd1306_t *display, const char *i2c_device)
         return -1;
 
     delay_ms(100);
+
     memset(display->buffer, 0, sizeof(display->buffer));
 
     return 0;
@@ -249,7 +250,7 @@ const uint8_t *get_char_data_16x16(char c)
 
 int ssd1306_send_data(ssd1306_t *display, uint8_t *data, int len)
 {
-    const int chunk_size = 32; // Enviar maximo de 24 bytes por que si no problemillas
+    const int chunk_size = 32; // Enviar maximo de 32 bytes por que si no problemillas con el puto i2c
 
     for (int offset = 0; offset < len; offset += chunk_size)
     {
@@ -312,6 +313,9 @@ int ssd1306_write_char_16x16(ssd1306_t *display, char c, uint8_t x, uint8_t page
 
 int ssd1306_write_string_16x16(ssd1306_t *display, const char *str, uint8_t x, uint8_t page)
 {
+
+    log_message("DEBUG: ssd1306_write_string_16x16 called with: %s", SCREEN_LOG_FILE, str);
+
     uint8_t pos_x = x;
 
     for (int i = 0; str[i] != '\0'; i++)
@@ -362,24 +366,141 @@ void ssd1306_cleanup(ssd1306_t *display)
 /*
     Actualiza la pantalla con el nombre del objeto.
 */
+/*
+    Actualiza la pantalla parseando detecciones separadas por el ':'.
+    Solo las que cambian
+    Cada detección ocupa 2 pag
+    Máximo 4
+*/
 void update_screen(const char *object_name)
 {
+    log_message("DEBUG: update_screen called with: %s", SCREEN_LOG_FILE, object_name);
+
+    if (current_config.source_type == SOURCE_TYPE_I2C_TEMP)
+    {
+        log_message("Going to write string 16x16 to screen: %s", SCREEN_LOG_FILE, object_name);
+        ssd1306_write_string_16x16(&global_display, object_name, 0, 2);
+        log_message("Screen updated with: %s", SCREEN_LOG_FILE, object_name);
+        return;
+    }
+
+    static char cached_detections[4][8] = {"", "", "", ""}; // cache detecciones
+    static int cached_count = 0;
+
     if (!screen_initialized)
     {
         log_message("[WARNING] Screen not initialized, ignoring update", SCREEN_LOG_FILE);
         return;
     }
 
-    ssd1306_clear(&global_display);
+    // Clear y cache
+    if (strcmp(object_name, "CLEAR") == 0)
+    {
+        ssd1306_clear(&global_display);
 
-    ssd1306_write_string_16x16(&global_display, "COSMOS", 0, 0); // Título en páginas 0-1
+        for (int i = 0; i < 4; i++)
+        {
+            cached_detections[i][0] = '\0';
+        }
+        cached_count = 0;
 
-    char display_text[8]; // Máximo 8 caracteres con fuente 16x16 (128/16=8)
-    strncpy(display_text, object_name, 7);
-    display_text[7] = '\0';
-    ssd1306_write_string_16x16(&global_display, display_text, 0, 2); // Detección en páginas 2-3
+        log_message("Screen cleared due to CLEAR signal", SCREEN_LOG_FILE);
+        return;
+    }
 
-    log_message("Screen updated with detection: %s", SCREEN_LOG_FILE, object_name);
+    // Parsear detecciones nuevas
+    char new_detections[4][8];
+    int new_count = 0;
+
+    char temp_string[256];
+    strncpy(temp_string, object_name, sizeof(temp_string) - 1);
+    temp_string[sizeof(temp_string) - 1] = '\0';
+
+    char *token = strtok(temp_string, ":");
+    while (token != NULL && new_count < 4)
+    {
+        while (*token == ' ')
+            token++;
+
+        strncpy(new_detections[new_count], token, 7);
+        new_detections[new_count][7] = '\0';
+
+        int len = strlen(new_detections[new_count]);
+        while (len > 0 && new_detections[new_count][len - 1] == ' ')
+        {
+            new_detections[new_count][--len] = '\0';
+        }
+
+        if (strlen(new_detections[new_count]) > 0)
+        {
+            new_count++;
+        }
+
+        token = strtok(NULL, ":");
+    }
+    bool screen_changed = false;
+
+    // verificar si el número de detecciones ha cambiado
+    if (new_count != cached_count)
+    {
+        screen_changed = true;
+    }
+
+    // comparar cada
+    for (int i = 0; i < 4; i++)
+    {
+        char *new_det = (i < new_count) ? new_detections[i] : "";
+        char *cached_det = cached_detections[i];
+
+        if (strcmp(new_det, cached_det) != 0)
+        {
+
+            uint8_t page_start = i * 2;
+
+            if (page_start + 1 < SSD1306_PAGES)
+            {
+
+                uint8_t zeros[128];
+                memset(zeros, 0, 128);
+
+                for (int p = 0; p < 2; p++)
+                { // esto por que cada ocupa 2 paginotes
+                    if (ssd1306_set_write_area(&global_display, 0, 127, page_start + p, page_start + p) >= 0)
+                    {
+                        ssd1306_send_data(&global_display, zeros, 128);
+                    }
+                }
+
+                // escribir nueva.
+                if (strlen(new_det) > 0)
+                {
+                    if (ssd1306_write_string_16x16(&global_display, new_det, 0, page_start) < 0)
+                    {
+                        log_message("[ERROR] Failed to write detection %d to screen: %s", SCREEN_LOG_FILE, i, new_det);
+                    }
+                    else
+                    {
+                        log_message("Updated page %d with: %s", SCREEN_LOG_FILE, i, new_det);
+                    }
+                }
+            }
+
+            strncpy(cached_detections[i], new_det, 7);
+            cached_detections[i][7] = '\0';
+            screen_changed = true;
+        }
+    }
+
+    cached_count = new_count;
+
+    if (screen_changed)
+    {
+        log_message("Screen updated partially with %d detections: %s", SCREEN_LOG_FILE, new_count, object_name);
+    }
+    else
+    {
+        log_message("Screen content unchanged, no refresh needed: %s", SCREEN_LOG_FILE, object_name);
+    }
 }
 
 int start_screen(void)

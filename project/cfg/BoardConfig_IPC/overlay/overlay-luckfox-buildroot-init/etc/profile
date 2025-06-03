@@ -2,16 +2,19 @@ export PATH="/bin:/sbin:/usr/bin:/usr/sbin"
 
 export EDITOR='/bin/vi'
 
-#export PS1='[\u@\h \W]# '
-if [ "$PS1" ]; then
-	if [ "`id -u`" -eq 0 ]; then
-		#export PS1='# '
-    export PS1='[\u@\h \W]# '
-	else
-		#export PS1='$ '
-    export PS1='[\u@\h \W]$ '
-	fi
+#!/bin/sh
+if [ "$(id -u)" -eq 0 ]; then
+  USER_COLOR="\033[1;31m" # rojo
+else
+  USER_COLOR="\033[1;32m" # verde
 fi
+
+HOST_COLOR="\033[1;34m"
+PATH_COLOR="\033[1;36m"
+RESET_COLOR="\033[0m"
+
+export PS1="\n╭─${USER_COLOR}\u${RESET_COLOR}@${HOST_COLOR}\h${RESET_COLOR} ${PATH_COLOR}\w${RESET_COLOR}\n╰─➤ "
+
 
 # Source configuration files from /etc/profile.d
 for i in /etc/profile.d/*.sh ; do

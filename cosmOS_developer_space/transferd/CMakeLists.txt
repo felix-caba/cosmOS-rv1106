@@ -72,6 +72,7 @@ find_package(Threads REQUIRED)
 # Source files
 set(SRCS 
     src/font.c
+    src/temp.c
     src/screen.c
     src/config.c
     src/daemon.c

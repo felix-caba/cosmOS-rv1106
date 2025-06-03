@@ -111,6 +111,10 @@ int start_daemon() {
         usleep(200000);
     }
 
+    if (current_config.source_type == SOURCE_TYPE_I2C_TEMP) {
+        stop_temp_sensor();
+    }
+
     if (current_config.output_type == OUTPUT_TYPE_SCREEN) {
         stop_screen();
     }

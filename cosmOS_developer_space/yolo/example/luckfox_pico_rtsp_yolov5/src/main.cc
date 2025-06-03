@@ -19,6 +19,9 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+#include <map>
+
+using namespace std;
 
 #define YOLO_LOG_FILE "/tmp/yolo_log.log"
 
@@ -36,8 +39,72 @@ float scale;
 int leftPadding;
 int topPadding;
 
+static bool web_streaming_enabled = false;
+static int web_frame_counter = 0;
+
 static int jpeg_pipe_fd = -1;
 static bool jpeg_streaming_initialized = false;
+
+static vector<string> previous_detections;
+static vector<string> current_detections;
+static char detection_buffer[512]; // Buffer estatico para no estar todo el rato allocando memoria
+
+void handle_web_streaming(const cv::Mat &frame)
+{
+	if (!web_streaming_enabled)
+	{
+		return; // No hacer nada si web streaming está deshabilitado
+	}
+
+	if (++web_frame_counter % 1 == 0)
+	{							   // cada frame (siempre se ejecuta porque % 1 == 0)
+		std::vector<uchar> buffer; // buffer para almacenar los datos jpeg comprimidos
+		std::vector<int> jpeg_params = {
+			cv::IMWRITE_JPEG_QUALITY, 85, // parametros de compresion jpeg al 85% de calidad
+		};
+
+		if (cv::imencode(".jpg", frame, buffer, jpeg_params))
+		{ // convertir frame a jpeg
+			// crear archivo temporal para escritura atomica
+			FILE *jpg = fopen("/tmp/frame_new.jpg", "wb");
+			if (jpg)
+			{
+				fwrite(buffer.data(), 1, buffer.size(), jpg); // escribir datos jpeg al archivo
+				fclose(jpg);
+				rename("/tmp/frame_new.jpg", "/tmp/frame.jpg"); // renombre para que sea atomico
+
+				// el rename hace que se bloquee el acceso al archivo hasta que se complete la escritura.
+				// por eso hago un new, hasta que frame.jpg no esté 100% escrito, no se puede acceder a él.
+
+				// Si el fwrite tardase mucho la api leeria algo incompleto. escribiendo y luego rename
+				// se evita que se lea un frame incompleto. lo unico malo, es que puede haber
+				// delays entre frames si el procesamiento es lento, pero no se pierde calidad.
+
+				static int log_counter = 0;
+				if (++log_counter % 60 == 0)
+				{ // log cada 60 frames pa no saturar
+					printf("Updated frame.jpg (%zu bytes) - frame %d\n", buffer.size(), log_counter);
+				}
+			}
+			else
+			{
+				static int error_count = 0;
+				if (++error_count % 100 == 1)
+				{ // reportar error cada 100 fallos
+					printf("Failed to open /tmp/frame_new.jpg for writing (error %d)\n", error_count);
+				}
+			}
+		}
+		else
+		{
+			static int encode_error_count = 0;
+			if (++encode_error_count % 100 == 1)
+			{ // reportar error de codificacion cada 100 fallos
+				printf("Failed to encode JPEG (error %d)\n", encode_error_count);
+			}
+		}
+	}
+}
 
 cv::Mat letterbox(cv::Mat input)
 {
@@ -83,6 +150,109 @@ void log_error(const char *message)
 	}
 }
 
+bool get_current_detections_optimized(object_detect_result_list *od_results, vector<string> &detections)
+{
+    detections.clear();
+
+    if (od_results == nullptr || od_results->count == 0)
+    {
+        return false;
+    }
+
+    // memoria por si acaso.
+    if (detections.capacity() < (size_t)od_results->count)
+    {
+        detections.reserve(od_results->count);
+    }
+
+    std::map<string, int> object_counts;
+    
+    for (int i = 0; i < od_results->count; i++)
+    {
+        object_detect_result *det_result = &(od_results->results[i]);
+        const char *object_name = coco_cls_to_name(det_result->cls_id);
+        object_counts[object_name]++;
+    }
+
+    // strings con numero.
+    for (const auto &pair : object_counts)
+    {
+        for (int i = 1; i <= pair.second; i++)
+        {
+            char numbered_object[32];
+            snprintf(numbered_object, sizeof(numbered_object), "%s %d", pair.first.c_str(), i);
+            detections.emplace_back(numbered_object);
+        }
+    }
+
+    return !detections.empty();
+}
+
+int write_to_pipe_optimized(int pipe_fd, const vector<string> &detections)
+{
+	if (pipe_fd < 0 || detections.empty())
+	{
+		return -1;
+	}
+
+	int pos = 0;
+
+	// primera
+	int written = snprintf(detection_buffer + pos, sizeof(detection_buffer) - pos, "%s", detections[0].c_str());
+	if (written < 0 || written >= (int)(sizeof(detection_buffer) - pos))
+		return -1;
+	pos += written;
+
+	for (size_t i = 1; i < detections.size(); i++)
+	{
+		int remaining = sizeof(detection_buffer) - pos - 2; // -2 para ':' y '\n'
+		if (remaining <= 0)
+			break;
+
+		written = snprintf(detection_buffer + pos, remaining, ":%s", detections[i].c_str());
+		if (written < 0 || written >= remaining)
+			break;
+		pos += written;
+	}
+
+	// newline al final
+	if (pos < (int)sizeof(detection_buffer) - 1)
+	{
+		detection_buffer[pos++] = '\n';
+		detection_buffer[pos] = '\0';
+	}
+
+	ssize_t bytes_written = write(pipe_fd, detection_buffer, pos);
+	return (bytes_written == pos) ? 0 : -1;
+}
+
+bool vectors_equal_fast(const vector<string> &a, const vector<string> &b)
+{
+	if (a.size() != b.size())
+	{
+		return false;
+	}
+
+	// Busqueda lineal pa conjuntos pequeñoides
+	for (const string &item_a : a)
+	{
+		bool found = false;
+		for (const string &item_b : b)
+		{
+			if (item_a == item_b)
+			{
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 int main(int argc, char *argv[])
 {
 	// create log file
@@ -99,7 +269,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	int16_t detection_output_fd = -1;
+	int16_t detection_output_fd = -1; // El pipe
 
 	for (int i = 1; i < argc; ++i)
 	{
@@ -109,12 +279,16 @@ int main(int argc, char *argv[])
 			{
 				detection_output_fd = atoi(argv[i + 1]);
 				i++;
-				fprintf(stderr, "YOLO: Detection output will be sent to FD: %d\n", detection_output_fd); // Log to stderr
+				fprintf(stderr, "YOLO: Detection output will be sent to FD: %d\n", detection_output_fd);
 			}
 			else
 			{
 				fprintf(stderr, "YOLO: --detection-fd option requires a value.\n");
 			}
+		}
+		else if (strcmp(argv[i], "--web") == 0)
+		{
+			web_streaming_enabled=true;
 		}
 	}
 
@@ -179,16 +353,6 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	/*
-	// rtsp init
-	rtsp_demo_handle g_rtsplive = NULL;
-	rtsp_session_handle g_rtsp_session;
-	// g_rtsplive = create_rtsp_demo(554);
-	// g_rtsp_session = rtsp_new_session(g_rtsplive, "/live/0");
-	rtsp_set_video(g_rtsp_session, RTSP_CODEC_ID_VIDEO_H264, NULL, 0);
-	rtsp_sync_video_ts(g_rtsp_session, rtsp_get_reltime(), rtsp_get_ntptime());
-	*/
-
 	// vi init
 	vi_dev_init();
 	vi_chn_init(0, width, height);
@@ -220,10 +384,27 @@ int main(int argc, char *argv[])
 			memcpy(rknn_app_ctx.input_mems[0]->virt_addr, letterboxImage.data, model_width * model_height * 3);
 			inference_yolov5_model(&rknn_app_ctx, &od_results);
 
-			for (int i = 0; i < od_results.count; i++)
+			if (od_results.count > 0)
 			{
-				if (od_results.count >= 1)
+				bool has_detections = get_current_detections_optimized(&od_results, current_detections);
+
+				if (has_detections && detection_output_fd != -1)
 				{
+					if (!vectors_equal_fast(current_detections, previous_detections))
+					{
+						if (write_to_pipe_optimized(detection_output_fd, current_detections) == 0)
+						{
+							previous_detections = current_detections; // Swap 
+						}
+						else
+						{
+							log_error("Failed to write detections to pipe");
+						}
+					}
+				}
+
+				for (int i = 0; i < od_results.count; i++)
+				{ // Escritura de el frame
 					object_detect_result *det_result = &(od_results.results[i]);
 
 					sX = (int)(det_result->box.left);
@@ -232,91 +413,25 @@ int main(int argc, char *argv[])
 					eY = (int)(det_result->box.bottom);
 					mapCoordinates(&sX, &sY);
 					mapCoordinates(&eX, &eY);
-					////////////////////////////////////////////////////////////////////////
-					if (detection_output_fd != -1)
-					{ 
-						char detection_line_buffer[256];
-						int len = snprintf(detection_line_buffer, sizeof(detection_line_buffer),
-										   "%s\n", coco_cls_to_name(det_result->cls_id));
 
-						if (len > 0 && len < (int)sizeof(detection_line_buffer))
-						{
-							ssize_t written_bytes = write(detection_output_fd, detection_line_buffer, len);
-							if (written_bytes == -1)
-							{
-								fprintf(stderr, "YOLO: Error writing to detection_output_fd (FD: %d). Return value: %zd, errno: %d (%s)\n",
-										detection_output_fd, written_bytes, errno, strerror(errno));
-							}
-							else if (written_bytes < len)
-							{
-								fprintf(stderr, "YOLO: Partial write to detection_output_fd\n");
-							}
-						}
-						else if (len >= (int)sizeof(detection_line_buffer))
-						{
-							fprintf(stderr, "YOLO: detection_line_buffer too small for snprintf output.\n");
-						}
-						else
-						{
-							fprintf(stderr, "YOLO: snprintf error for detection line.\n");
-						}
-					}
-					////////////////////////////////////////////////////////////////
-					cv::rectangle(frame, cv::Point(sX, sY),
-								  cv::Point(eX, eY),
-								  cv::Scalar(0, 255, 0), 3);
+					cv::rectangle(frame, cv::Point(sX, sY), cv::Point(eX, eY), cv::Scalar(0, 255, 0), 3);
 					sprintf(text, "%s %.1f%%", coco_cls_to_name(det_result->cls_id), det_result->prop * 100);
-					cv::putText(frame, text, cv::Point(sX, sY - 8),
-								cv::FONT_HERSHEY_SIMPLEX, 1,
-								cv::Scalar(0, 255, 0), 2);
+					cv::putText(frame, text, cv::Point(sX, sY - 8), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+				}
+			}
+			else
+			{
+				if (!previous_detections.empty() && detection_output_fd != -1)
+				{
+					const char *clear_msg = "CLEAR\n";
+					write(detection_output_fd, clear_msg, strlen(clear_msg));
+					previous_detections.clear();
 				}
 			}
 		}
 		memcpy(data, frame.data, width * height * 3);
 
-
-        if (++web_frame_counter % 1 == 0) 
-        {
-            std::vector<uchar> buffer; // buffer for jpeg data, resize as needed
-            std::vector<int> jpeg_params = {
-                cv::IMWRITE_JPEG_QUALITY, 85, 
-            };
-            
-            if (cv::imencode(".jpg", frame, buffer, jpeg_params))
-            {
-                
-                FILE *jpg = fopen("/tmp/frame_new.jpg", "wb"); // open atomic
-                if (jpg)
-                {
-                    fwrite(buffer.data(), 1, buffer.size(), jpg);
-                    fclose(jpg);
-                    rename("/tmp/frame_new.jpg", "/tmp/frame.jpg"); 
-                    
-                    static int log_counter = 0;
-                    if (++log_counter % 60 == 0)
-                    {
-                        printf("Updated frame.jpg (%zu bytes) - frame %d\n", buffer.size(), log_counter);
-                    }
-                }
-                else
-                {
-                    static int error_count = 0;
-                    if (++error_count % 100 == 1) // cada 100
-                    {
-                        printf("Failed to open /tmp/frame_new.jpg for writing (error %d)\n", error_count);
-                    }
-                }
-            }
-            else
-            {
-                static int encode_error_count = 0;
-                if (++encode_error_count % 100 == 1) 
-                {
-                    printf("Failed to encode JPEG (error %d)\n", encode_error_count);
-                }
-            }
-        }
-    
+		handle_web_streaming(frame);
 
 		// release frame
 		s32Ret = RK_MPI_VI_ReleaseChnFrame(0, 0, &stViFrame);
@@ -324,14 +439,6 @@ int main(int argc, char *argv[])
 		{
 			RK_LOGE("RK_MPI_VI_ReleaseChnFrame fail %x", s32Ret);
 		}
-		
-		/*
-		s32Ret = RK_MPI_VENC_ReleaseStream(0, &stFrame);
-		if (s32Ret != RK_SUCCESS)
-		{
-			RK_LOGE("RK_MPI_VENC_ReleaseStream fail %x", s32Ret);
-		}
-			*/
 		memset(text, 0, 8);
 	}
 
@@ -359,10 +466,6 @@ int main(int argc, char *argv[])
 	// Release rknn model
 	release_yolov5_model(&rknn_app_ctx);
 	deinit_post_process();
-
-
-
-
 
 	return 0;
 }
